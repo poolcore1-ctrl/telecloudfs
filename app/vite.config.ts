@@ -25,6 +25,8 @@ export default defineConfig({
       'socks': path.resolve(__dirname, './src/shim.js'),
       'websocket': path.resolve(__dirname, './src/shim.js'),
       'node-localstorage': path.resolve(__dirname, './src/shim.js'),
+      // Alias os to the same shim but we will also have it on window
+      'os': path.resolve(__dirname, './src/shim.js'),
     }
   },
   optimizeDeps: {
