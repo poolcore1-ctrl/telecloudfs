@@ -47,6 +47,9 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     } catch (err: any) {
-        return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
+        const message = err?.message || String(err) || 'Unknown error';
+        const stack = err?.stack || '';
+        console.error('[vault] Error:', message, stack);
+        return NextResponse.json({ error: message, stack }, { status: 500 });
     }
 }
