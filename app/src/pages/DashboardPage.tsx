@@ -47,11 +47,15 @@ export default function DashboardPage() {
     })();
   }, [toast]);
 
+  const [page, setPage] = useState(1);
+  const pageSize = 60;
+
   // Load files
   useEffect(() => {
     (async () => {
       setFilesLoading(true);
       setSelected(new Set());
+      setPage(1); // Reset page on folder change
       try {
         const list = await telegramService.getFiles(activeFolderId);
         setFiles(list);
@@ -67,10 +71,16 @@ export default function DashboardPage() {
   }, [files]);
 
   const filteredFiles = useMemo(() => {
-    if (!searchQuery) return files;
     const q = searchQuery.toLowerCase();
-    return files.filter(f => f.name.toLowerCase().includes(q));
+    return files.filter(f => !q || f.name.toLowerCase().includes(q));
   }, [files, searchQuery]);
+
+  const paginatedFiles = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredFiles.slice(start, start + pageSize);
+  }, [filteredFiles, page]);
+
+  const totalPages = Math.ceil(filteredFiles.length / pageSize);
 
   const folderName = useMemo(() => {
     if (activeFolderId === null) return 'All Files';
@@ -149,8 +159,8 @@ export default function DashboardPage() {
   };
 
   const openFile = (file: FileItem) => {
-    const url = telegramService.getStreamingUrl(file.id, activeFolderId, file.name);
-    window.open(url, '_blank');
+    const previewUrl = activeFolderId ? `/preview/${activeFolderId}/${file.id}` : `/preview/${file.id}`;
+    window.open(previewUrl, '_blank');
   };
 
   const downloadFile = (file: FileItem) => {
@@ -192,22 +202,32 @@ export default function DashboardPage() {
               <div className="spinner" />
               <p>Fetching files from Telegram...</p>
             </div>
-          ) : filteredFiles.length > 0 ? (
-            <div className={viewMode === 'grid' ? 'file-grid' : 'file-list'}>
-              {filteredFiles.map(f => (
-                viewMode === 'grid' ? (
-                  <FileCard key={f.id} file={f} selected={selected.has(f.id)}
-                    onSelect={e => { e.stopPropagation(); const s = new Set(selected); if (s.has(f.id)) s.delete(f.id); else s.add(f.id); setSelected(s); }}
-                    onOpen={() => openFile(f)}
-                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, fileId: f.id }); }} />
-                ) : (
-                  <FileListItem key={f.id} file={f} selected={selected.has(f.id)}
-                    onSelect={e => { e.stopPropagation(); const s = new Set(selected); if (s.has(f.id)) s.delete(f.id); else s.add(f.id); setSelected(s); }}
-                    onOpen={() => openFile(f)}
-                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, fileId: f.id }); }} />
-                )
-              ))}
-            </div>
+          ) : paginatedFiles.length > 0 ? (
+            <>
+              <div className={viewMode === 'grid' ? 'file-grid' : 'file-list'}>
+                {paginatedFiles.map(f => (
+                  viewMode === 'grid' ? (
+                    <FileCard key={f.id} file={f} selected={selected.has(f.id)}
+                      onSelect={e => { e.stopPropagation(); const s = new Set(selected); if (s.has(f.id)) s.delete(f.id); else s.add(f.id); setSelected(s); }}
+                      onOpen={() => openFile(f)}
+                      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, fileId: f.id }); }} />
+                  ) : (
+                    <FileListItem key={f.id} file={f} selected={selected.has(f.id)}
+                      onSelect={e => { e.stopPropagation(); const s = new Set(selected); if (s.has(f.id)) s.delete(f.id); else s.add(f.id); setSelected(s); }}
+                      onOpen={() => openFile(f)}
+                      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, fileId: f.id }); }} />
+                  )
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="pagination">
+                  <button className="btn btn-ghost btn-sm" disabled={page === 1} onClick={() => setPage(p => p - 1)}>Previous</button>
+                  <span className="page-info">Page {page} of {totalPages}</span>
+                  <button className="btn btn-ghost btn-sm" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next</button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="empty-state">
               <div className="empty-icon">📅</div>

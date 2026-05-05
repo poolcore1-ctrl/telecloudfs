@@ -6,6 +6,7 @@ import { telegramService } from './services/TelegramClient';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import SettingsPage from './pages/SettingsPage';
+import PreviewPage from './pages/PreviewPage';
 
 function Guard({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useApp();
@@ -38,6 +39,8 @@ function AppRoutes() {
       <Route path="/dashboard" element={<Guard><DashboardPage /></Guard>} />
       <Route path="/dashboard/folder/:folderId" element={<Guard><DashboardPage /></Guard>} />
       <Route path="/settings" element={<Guard><SettingsPage /></Guard>} />
+      <Route path="/preview/:fileId" element={<PreviewPage />} />
+      <Route path="/preview/:folderId/:fileId" element={<PreviewPage />} />
       <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
     </Routes>
   );
