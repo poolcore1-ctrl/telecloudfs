@@ -11,6 +11,7 @@ interface Props {
   selectedCount: number;
   totalCount: number;
   onMoveSelected: () => void;
+  onCopySelected: () => void;
   onDeleteSelected: () => void;
   onClearSelection: () => void;
   onSelectAll: () => void;
@@ -21,7 +22,7 @@ interface Props {
 
 export default function TopBar({ 
   folderName, activeFolderId, viewMode, onViewChange, onSearch, searchQuery, 
-  onUpload, selectedCount, totalCount, onMoveSelected, onDeleteSelected, onClearSelection,
+  onUpload, selectedCount, totalCount, onMoveSelected, onCopySelected, onDeleteSelected, onClearSelection,
   onSelectAll, onRenameFolder, onDeleteFolder, stats
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -101,6 +102,7 @@ export default function TopBar({
         {selectedCount > 0 ? (
           <>
             <span style={{ fontSize: 12, color: 'var(--text-2)' }}>{selectedCount} selected</span>
+            <button className="btn btn-ghost btn-sm" onClick={onCopySelected}>Copy</button>
             <button className="btn btn-ghost btn-sm" onClick={onMoveSelected}>Move</button>
             <button className="btn btn-danger btn-sm" onClick={onDeleteSelected}>Delete</button>
             <button className="btn-icon" onClick={onClearSelection} title="Clear selection">✕</button>

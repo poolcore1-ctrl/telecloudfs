@@ -27,7 +27,8 @@ export default function DashboardPage() {
 
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
-  const [showMove, setShowMove] = useState(false);
+  const [transferMode, setTransferMode] = useState<'move' | 'copy'>('move');
+  const [showTransfer, setShowTransfer] = useState(false);
   const [ctx, setCtx] = useState<{ x: number; y: number; fileId: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragCount = useRef(0);
@@ -99,15 +100,20 @@ export default function DashboardPage() {
     } catch (e: any) { toast(e.message, 'error'); }
   };
 
-  const moveSelected = async (targetFolderId: number | null) => {
+  const handleTransfer = async (targetFolderId: number | null) => {
     if (targetFolderId === activeFolderId) return;
     const ids = Array.from(selected);
-    toast(`Moving ${ids.length} file(s)...`, 'info');
+    const action = transferMode === 'copy' ? 'Copying' : 'Moving';
+    toast(`${action} ${ids.length} file(s)...`, 'info');
     try {
-      await telegramService.moveFiles(ids, activeFolderId, targetFolderId);
-      setFiles(prev => prev.filter(f => !ids.includes(f.id)));
+      if (transferMode === 'copy') {
+        await telegramService.copyFiles(ids, activeFolderId, targetFolderId);
+      } else {
+        await telegramService.moveFiles(ids, activeFolderId, targetFolderId);
+        setFiles(prev => prev.filter(f => !ids.includes(f.id)));
+      }
       setSelected(new Set());
-      toast(`${ids.length} file(s) moved`, 'success');
+      toast(`${ids.length} file(s) ${transferMode}d`, 'success');
     } catch (e: any) { toast(e.message, 'error'); }
   };
 
@@ -170,7 +176,8 @@ export default function DashboardPage() {
           onUpload={handleUpload}
           selectedCount={selected.size}
           totalCount={filteredFiles.length}
-          onMoveSelected={() => setShowMove(true)}
+          onMoveSelected={() => { setTransferMode('move'); setShowTransfer(true); }}
+          onCopySelected={() => { setTransferMode('copy'); setShowTransfer(true); }}
           onDeleteSelected={() => setDeleteModal({ isOpen: true, fileIds: Array.from(selected) })}
           onClearSelection={() => setSelected(new Set())}
           onSelectAll={selectAll}
@@ -214,7 +221,8 @@ export default function DashboardPage() {
       {ctx && <ContextMenu x={ctx.x} y={ctx.y} items={[
         { label: 'Open', onClick: () => openFile(files.find(f => f.id === ctx.fileId)!) },
         { label: 'Download', onClick: () => downloadFile(files.find(f => f.id === ctx.fileId)!) },
-        { label: 'Move to...', onClick: () => { setSelected(new Set([ctx.fileId])); setShowMove(true); } },
+        { label: 'Copy to...', onClick: () => { setSelected(new Set([ctx.fileId])); setTransferMode('copy'); setShowTransfer(true); } },
+        { label: 'Move to...', onClick: () => { setSelected(new Set([ctx.fileId])); setTransferMode('move'); setShowTransfer(true); } },
         { divider: true },
         { label: 'Delete', danger: true, onClick: () => setDeleteModal({ isOpen: true, fileIds: [ctx.fileId] }) }
       ]} onClose={() => setCtx(null)} />}
@@ -230,11 +238,12 @@ export default function DashboardPage() {
       />
 
       <MoveModal 
-        isOpen={showMove} 
-        onClose={() => setShowMove(false)} 
-        onConfirm={moveSelected}
+        isOpen={showTransfer} 
+        onClose={() => setShowTransfer(false)} 
+        onConfirm={handleTransfer}
         folders={folders.filter(f => f.id !== activeFolderId)}
         selectedCount={selected.size}
+        mode={transferMode}
       />
 
       {/* New Folder Modal */}

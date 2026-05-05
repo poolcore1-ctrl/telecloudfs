@@ -7,15 +7,19 @@ interface Props {
   onConfirm: (targetFolderId: number | null) => void;
   folders: Folder[];
   selectedCount: number;
+  mode: 'move' | 'copy';
 }
 
-export default function MoveModal({ isOpen, onClose, onConfirm, folders, selectedCount }: Props) {
+export default function MoveModal({ isOpen, onClose, onConfirm, folders, selectedCount, mode }: Props) {
+  const title = mode === 'copy' ? 'Copy Files' : 'Move Files';
+  const actionText = mode === 'copy' ? 'copying' : 'moving';
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Move Files"
-      message={`Select destination for ${selectedCount} file(s):`}
+      title={title}
+      message={`Select destination for ${actionText} ${selectedCount} file(s):`}
       showFooter={false}
     >
       <div className="move-list">
