@@ -26,7 +26,14 @@ export default function LoginPage() {
   const [masterConfirm, setMasterConfirm] = useState('');
 
   const err = (msg: string) => { setError(msg); setLoading(false); };
-  const go = async (fn: () => Promise<void>) => { setError(''); setLoading(true); try { await fn(); } catch (e: any) { err(e.message || 'Something went wrong'); } };
+  const go = async (fn: () => Promise<void>) => {
+    setError(''); setLoading(true);
+    try { await fn(); }
+    catch (e: any) {
+      console.error('Full Error:', e);
+      err(e.stack || e.message || 'Something went wrong');
+    }
+  };
 
   const stepOrder: Step[] = ['creds', 'phone', 'code', 'master'];
   const stepIndex = stepOrder.indexOf(step);

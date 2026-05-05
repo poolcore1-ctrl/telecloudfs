@@ -16,15 +16,21 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      // GramJS specific fixes
       'big-integer': 'big-integer',
     }
   },
   optimizeDeps: {
-    include: ['telegram', 'big-integer', 'buffer', 'util', 'events'],
+    include: ['telegram', 'big-integer', 'buffer', 'util', 'events', 'pako'],
+    esbuildOptions: {
+      target: 'esnext',
+      supported: {
+        'top-level-await': true
+      }
+    }
   },
   build: {
     outDir: 'dist',
+    target: 'esnext',
     rollupOptions: {
       output: {
         manualChunks: {
