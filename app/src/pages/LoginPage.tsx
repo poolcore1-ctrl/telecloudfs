@@ -85,6 +85,7 @@ export default function LoginPage() {
       const client = telegramService.getClient();
       if (!client) throw new Error('Not connected');
       await telegramService.saveToVault(master, client.apiId, client.apiHash);
+      localStorage.setItem('token', master);
       setAuthenticated(true);
       navigate('/dashboard');
     });
@@ -97,6 +98,7 @@ export default function LoginPage() {
       await telegramService.connect(id, hash);
       const ok = await telegramService.checkAuthorization();
       if (!ok) throw new Error('Session expired. Please set up again.');
+      localStorage.setItem('token', master);
       setAuthenticated(true);
       navigate('/dashboard');
     });
