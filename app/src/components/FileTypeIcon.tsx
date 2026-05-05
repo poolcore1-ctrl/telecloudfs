@@ -1,92 +1,16 @@
-import {
-    File, FileText, FileImage, FileVideo, FileAudio,
-    FileArchive, FileCode, FileSpreadsheet, Presentation,
-    FileType
-} from 'lucide-react';
-
-const extensionMap: Record<string, { icon: typeof File; color: string }> = {
-    // Images
-    jpg: { icon: FileImage, color: 'text-pink-400' },
-    jpeg: { icon: FileImage, color: 'text-pink-400' },
-    png: { icon: FileImage, color: 'text-pink-400' },
-    gif: { icon: FileImage, color: 'text-pink-400' },
-    webp: { icon: FileImage, color: 'text-pink-400' },
-    svg: { icon: FileImage, color: 'text-pink-400' },
-    bmp: { icon: FileImage, color: 'text-pink-400' },
-    heic: { icon: FileImage, color: 'text-pink-400' },
-
-    // Videos
-    mp4: { icon: FileVideo, color: 'text-purple-400' },
-    mov: { icon: FileVideo, color: 'text-purple-400' },
-    avi: { icon: FileVideo, color: 'text-purple-400' },
-    mkv: { icon: FileVideo, color: 'text-purple-400' },
-    webm: { icon: FileVideo, color: 'text-purple-400' },
-
-    // Audio
-    mp3: { icon: FileAudio, color: 'text-green-400' },
-    wav: { icon: FileAudio, color: 'text-green-400' },
-    flac: { icon: FileAudio, color: 'text-green-400' },
-    aac: { icon: FileAudio, color: 'text-green-400' },
-    ogg: { icon: FileAudio, color: 'text-green-400' },
-
-    // Documents
-    pdf: { icon: FileType, color: 'text-red-400' },
-    doc: { icon: FileText, color: 'text-blue-400' },
-    docx: { icon: FileText, color: 'text-blue-400' },
-    txt: { icon: FileText, color: 'text-gray-400' },
-    rtf: { icon: FileText, color: 'text-gray-400' },
-    md: { icon: FileText, color: 'text-gray-400' },
-
-    // Spreadsheets
-    xls: { icon: FileSpreadsheet, color: 'text-green-500' },
-    xlsx: { icon: FileSpreadsheet, color: 'text-green-500' },
-    csv: { icon: FileSpreadsheet, color: 'text-green-500' },
-
-    // Presentations
-    ppt: { icon: Presentation, color: 'text-orange-400' },
-    pptx: { icon: Presentation, color: 'text-orange-400' },
-    key: { icon: Presentation, color: 'text-orange-400' },
-
-    // Archives
-    zip: { icon: FileArchive, color: 'text-yellow-400' },
-    rar: { icon: FileArchive, color: 'text-yellow-400' },
-    '7z': { icon: FileArchive, color: 'text-yellow-400' },
-    tar: { icon: FileArchive, color: 'text-yellow-400' },
-    gz: { icon: FileArchive, color: 'text-yellow-400' },
-
-    // Code
-    js: { icon: FileCode, color: 'text-yellow-300' },
-    ts: { icon: FileCode, color: 'text-blue-300' },
-    jsx: { icon: FileCode, color: 'text-cyan-300' },
-    tsx: { icon: FileCode, color: 'text-cyan-300' },
-    py: { icon: FileCode, color: 'text-green-300' },
-    rs: { icon: FileCode, color: 'text-orange-300' },
-    go: { icon: FileCode, color: 'text-cyan-400' },
-    java: { icon: FileCode, color: 'text-red-300' },
-    html: { icon: FileCode, color: 'text-orange-400' },
-    css: { icon: FileCode, color: 'text-blue-400' },
-    json: { icon: FileCode, color: 'text-yellow-200' },
-};
-
-export function getFileTypeInfo(filename: string): { icon: typeof File; color: string } {
-    const ext = filename.split('.').pop()?.toLowerCase() || '';
-    return extensionMap[ext] || { icon: File, color: 'text-telegram-subtext' };
-}
-
-interface FileTypeIconProps {
-    filename: string;
-    className?: string;
-    size?: 'sm' | 'md' | 'lg';
-}
-
-const sizeMap = {
-    sm: 'w-5 h-5',
-    md: 'w-10 h-10',
-    lg: 'w-12 h-12',
-};
-
-export function FileTypeIcon({ filename, className, size = 'md' }: FileTypeIconProps) {
-    const { icon: Icon, color } = getFileTypeInfo(filename);
-    const sizeClass = className ?? sizeMap[size];
-    return <Icon className={`${sizeClass} ${color} pointer-events-none select-none`} />;
+export default function FileTypeIcon({ type, size = 36 }: { type: string; size?: number }) {
+  const configs: Record<string, { bg: string; color: string; path: string }> = {
+    image: { bg: 'rgba(92,168,122,0.15)', color: '#5ca87a', path: 'M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm2 0v10h10V5H5zm1 7l2-3 2 2.5L12 8l3 4H6z' },
+    video: { bg: 'rgba(107,159,212,0.15)', color: '#6b9fd4', path: 'M4 4a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2V6a2 2 0 00-2-2H4zm6 6l4-3v6l-4-3zm-6 0V6h8v8H4V10z' },
+    audio: { bg: 'rgba(200,169,122,0.15)', color: '#c8a97a', path: 'M9 3a1 1 0 00-1 1v8a3 3 0 103 3V7h3a1 1 0 000-2H10V4a1 1 0 00-1-1z' },
+    file: { bg: 'rgba(158,152,146,0.15)', color: '#9e9892', path: 'M4 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0013.414 6L10 2.586A2 2 0 008.586 2H4zm4 0v4h4M6 10h4m-4 3h4' },
+  };
+  const cfg = configs[type] || configs.file;
+  return (
+    <div style={{ width: size, height: size, background: cfg.bg, borderRadius: size * 0.25, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <svg width={size * 0.55} height={size * 0.55} viewBox="0 0 16 16" fill="none" stroke={cfg.color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+        <path d={cfg.path} />
+      </svg>
+    </div>
+  );
 }

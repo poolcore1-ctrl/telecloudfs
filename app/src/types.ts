@@ -1,40 +1,38 @@
-export interface TelegramFile {
-    id: number;
-    name: string;
-    size: number;
-    sizeStr: string; // Formatted size
-    created_at?: string;
-    type?: 'folder' | 'file'; // implied icon_type
-    // Add other fields if backend sends them
+export interface Folder {
+  id: number;
+  name: string;
+  file_count: number;
+  total_size: number;
 }
 
-export interface TelegramFolder {
-    id: number;
-    name: string;
-    parent_id?: number;
+export interface FileItem {
+  id: number;
+  name: string;
+  size: number;
+  mime_type: string;
+  date: number;
+  icon_type: 'file' | 'image' | 'video' | 'audio';
+  duration?: number;
 }
 
-export interface QueueItem {
-    id: string;
-    path: string;
-    file?: File;
-    folderId: number | null;
-    status: 'pending' | 'uploading' | 'success' | 'error' | 'cancelled';
-    error?: string;
-    progress?: number; // 0-100
+export interface UploadItem {
+  id: string;
+  file: File;
+  progress: number;
+  status: 'uploading' | 'done' | 'error';
+  error?: string;
 }
 
-export interface BandwidthStats {
-    up_bytes: number;
-    down_bytes: number;
+export interface ToastItem {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
 }
 
-export interface DownloadItem {
-    id: string;
-    messageId: number;
-    filename: string;
-    folderId: number | null;
-    status: 'pending' | 'downloading' | 'success' | 'error' | 'cancelled';
-    error?: string;
-    progress?: number; // 0-100
+export interface ApiKey {
+  id: string;
+  name: string;
+  key_secret?: string;
+  created_at: string;
+  last_used?: string;
 }
