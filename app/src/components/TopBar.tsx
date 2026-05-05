@@ -9,17 +9,20 @@ interface Props {
   searchQuery: string;
   onUpload: (files: File[]) => void;
   selectedCount: number;
+  totalCount: number;
   onMoveSelected: () => void;
   onDeleteSelected: () => void;
   onClearSelection: () => void;
+  onSelectAll: () => void;
   onRenameFolder: (id: number, newName: string) => void;
   onDeleteFolder: (id: number) => void;
+  stats: { totalSize: number; fileCount: number };
 }
 
 export default function TopBar({ 
   folderName, activeFolderId, viewMode, onViewChange, onSearch, searchQuery, 
-  onUpload, selectedCount, onMoveSelected, onDeleteSelected, onClearSelection,
-  onRenameFolder, onDeleteFolder 
+  onUpload, selectedCount, totalCount, onMoveSelected, onDeleteSelected, onClearSelection,
+  onSelectAll, onRenameFolder, onDeleteFolder, stats
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -43,6 +46,14 @@ export default function TopBar({
       onDeleteFolder(activeFolderId);
       setDeleteConfirm(false);
     }
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
   return (
@@ -73,6 +84,12 @@ export default function TopBar({
         )}
       </div>
 
+      <div className="topbar-stats">
+        <span className="stats-item">{stats.fileCount} files</span>
+        <span className="stats-divider">•</span>
+        <span className="stats-item">{formatSize(stats.totalSize)}</span>
+      </div>
+
       <div className="topbar-search">
         <svg className="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="6.5" cy="6.5" r="4.5" /><path d="M11 11l3 3" />
@@ -90,6 +107,10 @@ export default function TopBar({
           </>
         ) : (
           <>
+            <button className="btn btn-ghost btn-sm" onClick={onSelectAll} disabled={totalCount === 0}>
+              Select All
+            </button>
+            
             <div style={{ display: 'flex', background: 'var(--bg-2)', borderRadius: 'var(--r-sm)', padding: 2, border: '1px solid var(--border)' }}>
               {(['grid', 'list'] as const).map(v => (
                 <button key={v} className="btn-icon" onClick={() => onViewChange(v)}

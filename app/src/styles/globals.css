@@ -139,10 +139,33 @@ input::placeholder { color: var(--text-3); }
 
 /* ── Topbar ── */
 .topbar { height: var(--topbar-h); background: var(--bg-1); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; padding: 0 16px; flex-shrink: 0; }
+
 .topbar-title-area {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.topbar-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--bg-2);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+}
+
+.stats-item {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+
+.stats-divider {
+  color: var(--text-3);
+  font-size: 10px;
 }
 
 .topbar-title {
@@ -262,8 +285,71 @@ input::placeholder { color: var(--text-3); }
 .ctx-menu { position: fixed; background: var(--bg-2); border: 1px solid var(--border-strong); border-radius: var(--r-md); padding: 4px; min-width: 180px; box-shadow: var(--shadow-lg); z-index: 200; }
 .ctx-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--r-sm); font-size: 13px; color: var(--text-1); cursor: pointer; transition: background var(--transition); }
 .ctx-item:hover { background: var(--bg-hover); }
-.ctx-item.danger { color: var(--danger); }
-.ctx-item.danger:hover { background: var(--danger-dim); }
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-content {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.modal-header {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.modal-close:hover { color: var(--text-1); }
+
+.modal-body {
+  padding: 20px;
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.modal-footer {
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  background: var(--bg-2);
+}
 .ctx-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
 /* ── Empty state ── */
