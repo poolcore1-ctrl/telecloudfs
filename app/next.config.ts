@@ -4,8 +4,8 @@ const nextConfig: NextConfig = {
     // Ensure we use the Edge runtime for Cloudflare compatibility
     // runtime: 'edge', // Removed global edge runtime to avoid issues with some libraries, will specify per route
 
-    webpack: (config, { isServer }) => {
-        if (!isServer) {
+    webpack: (config, { isServer, nextRuntime }) => {
+        if (!isServer || nextRuntime === 'edge') {
             config.resolve.fallback = {
                 ...config.resolve.fallback,
                 net: false,
@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
                 crypto: false,
                 os: false,
                 stream: false,
+                constants: false,
                 buffer: require.resolve('buffer/'),
             };
         }
