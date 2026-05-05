@@ -23,7 +23,7 @@ class TelegramService {
 
     public async saveToVault(password: string, apiId: number, apiHash: string) {
         const { encryptionKey, authKey, salt } = await SecurityService.deriveKeys(password);
-        
+
         const payload = {
             session_string: this.session.save()
         };
@@ -65,9 +65,9 @@ class TelegramService {
         const payloadResponse = await fetch('/api/vault', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                action: 'load', 
-                password_hash: authKey 
+            body: JSON.stringify({
+                action: 'load',
+                password_hash: authKey
             })
         });
 
@@ -81,10 +81,10 @@ class TelegramService {
         }
 
         const decrypted = await SecurityService.decrypt(data.encrypted_payload, encryptionKey);
-        
+
         // Update local session and return credentials
         this.session = new StringSession(decrypted.session_string);
-        
+
         return {
             apiId: Number(api_id),
             apiHash: api_hash
@@ -116,10 +116,10 @@ class TelegramService {
 
     public async signInWithPassword(password: string) {
         if (!this.client) throw new Error("Client not connected");
-        await this.client.signInWithPassword({ apiId: this.client.apiId, apiHash: this.client.apiHash }, { password: async () => password, onError: (e) => { throw e; }});
+        await this.client.signInWithPassword({ apiId: this.client.apiId, apiHash: this.client.apiHash }, { password: async () => password, onError: (e) => { throw e; } });
         return true;
     }
-    
+
     public async checkAuthorization() {
         if (!this.client) return false;
         try {
@@ -193,25 +193,25 @@ class TelegramService {
     }
     public async getFiles(folderId: number | null) {
         if (!this.client) throw new Error("Client not connected");
-        
+
         const peer = folderId ? folderId : 'me';
         let allMessages: any[] = [];
         let lastId = 0;
-        
+
         // Fetch in batches of 100 to avoid hitting limits while getting a reasonable amount
         for (let i = 0; i < 20; i++) { // Increased to 20 batches (2000 messages)
-            const batch = await this.client.getMessages(peer, { 
+            const batch = await this.client.getMessages(peer, {
                 limit: 100,
                 offsetId: lastId
             });
             if (batch.length === 0) break;
-            
+
             // Avoid infinite loop if we keep getting the same message
             if (lastId !== 0 && batch.length === 1 && batch[0].id === lastId) break;
 
             allMessages = [...allMessages, ...batch];
             lastId = batch[batch.length - 1].id;
-            
+
             if (batch.length < 100) break;
         }
 
@@ -222,7 +222,7 @@ class TelegramService {
             const media = m.media as any;
             const doc = media.document;
             const photo = media.photo;
-            
+
             let fileName = 'Unknown';
             let size = 0;
             let mime_type = 'application/octet-stream';
@@ -302,7 +302,7 @@ class TelegramService {
         if (!this.client) throw new Error("Client not connected");
         const sourcePeer = sourceFolderId ? sourceFolderId : 'me';
         const targetPeer = targetFolderId ? targetFolderId : 'me';
-        
+
         await this.client.forwardMessages(targetPeer, {
             messages: messageIds,
             fromPeer: sourcePeer
@@ -315,7 +315,7 @@ class TelegramService {
         const peer = folderId ? folderId : 'me';
         const messages = await this.client.getMessages(peer, { ids: [messageId] });
         if (messages.length === 0 || !messages[0].media) throw new Error("File not found");
-        
+
         const buffer = await this.client.downloadMedia(messages[0].media, {
             progressCallback: (downloaded: any, total: any) => {
                 if (onProgress && total && total > 0) {
@@ -351,8 +351,8 @@ class TelegramService {
         let searchLastId = 0;
 
         for (let i = 0; i < 5; i++) {
-            const batch = await this.client.getMessages('me', { 
-                search: searchTerm, 
+            const batch = await this.client.getMessages('me', {
+                search: searchTerm,
                 limit: 100,
                 offsetId: searchLastId
             });
@@ -363,7 +363,7 @@ class TelegramService {
         }
 
         const messages = allSearchMessages;
-        
+
         return messages
             .filter(m => m.media && (m.media as any).document)
             .map(m => {
@@ -399,9 +399,9 @@ class TelegramService {
         const peer = folderId ? folderId : 'me';
         const messages = await this.client.getMessages(peer, { ids: [messageId] });
         if (messages.length === 0 || !messages[0].media) throw new Error("File not found");
-        
+
         const media = messages[0].media;
-        
+
         // Try to get a small thumbnail first
         // @ts-ignore
         const buffer = await this.client.downloadMedia(media, {
@@ -410,7 +410,7 @@ class TelegramService {
 
         if (!buffer) return this.getPreviewUrl(messageId, folderId);
 
-        const blob = new Blob([buffer]);
+        const blob = new Blob([buffer as any]);
         return URL.createObjectURL(blob);
     }
 
@@ -424,7 +424,7 @@ class TelegramService {
         const peer = folderId ? folderId : 'me';
         const messages = await this.client.getMessages(peer, { ids: [messageId] });
         if (messages.length === 0 || !messages[0].media) throw new Error("File not found");
-        
+
         const media = messages[0].media;
         const totalSize = (media as any).document?.size || (media as any).photo?.sizes.slice(-1)[0].size || 0;
         const mimeType = (media as any).document?.mimeType || 'application/octet-stream';
@@ -449,7 +449,7 @@ class TelegramService {
                 if (event.data?.type === 'GET_CHUNK') {
                     const { folderId, messageId, start, end } = event.data;
                     const port = event.ports[0];
-                    
+
                     try {
                         const result = await this.downloadChunk(messageId, folderId, start, end) as any;
                         port.postMessage(result, [result.data.buffer]);
@@ -458,7 +458,7 @@ class TelegramService {
                     }
                 }
             });
-            
+
             navigator.serviceWorker.register('/sw.js')
                 .then(reg => console.log('SW Registered', reg))
                 .catch(err => console.error('SW Registration failed', err));

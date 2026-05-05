@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'edge';
+
 import { DashboardContent } from "../../../components/dashboard/DashboardContent";
 import { use } from "react";
 
