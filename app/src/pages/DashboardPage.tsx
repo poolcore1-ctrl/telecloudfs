@@ -134,6 +134,15 @@ export default function DashboardPage() {
     navigate(`/dashboard/folder/${folder.id}`);
   }, [navigate, toast]);
 
+  // Rename folder
+  const renameFolder = useCallback(async (id: number, name: string) => {
+    try {
+      await telegramService.renameFolder(id, name);
+      setFolders(prev => prev.map(f => f.id === id ? { ...f, name } : f));
+      toast('Folder renamed', 'success');
+    } catch (e: any) { toast(e.message, 'error'); }
+  }, [toast]);
+
   // Delete folder
   const deleteFolder = useCallback(async (id: number) => {
     try {
@@ -177,6 +186,7 @@ export default function DashboardPage() {
       <div className="main-panel">
         <TopBar
           folderName={folderName}
+          activeFolderId={activeFolderId}
           viewMode={viewMode}
           onViewChange={setViewMode}
           onSearch={setSearchQuery}
@@ -186,6 +196,8 @@ export default function DashboardPage() {
           onMoveSelected={() => setShowMove(true)}
           onDeleteSelected={deleteSelected}
           onClearSelection={() => setSelected(new Set())}
+          onRenameFolder={renameFolder}
+          onDeleteFolder={deleteFolder}
         />
 
         <div className="file-area" onClick={() => { setCtx(null); setSelected(new Set()); }}>
@@ -207,7 +219,9 @@ export default function DashboardPage() {
                 <FileCard key={f.id} file={f} selected={selected.has(f.id)}
                   onSelect={e => { e.stopPropagation(); toggleSelect(f.id); }}
                   onOpen={() => openFile(f)}
-                  onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, fileId: f.id }); }} />
+                  onContextMenu={e => {
+                    e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, fileId: f.id });
+                  }} />
               ))}
             </div>
           ) : (

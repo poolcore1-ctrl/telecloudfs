@@ -1,7 +1,8 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 interface Props {
   folderName: string;
+  activeFolderId: number | null;
   viewMode: 'grid' | 'list';
   onViewChange: (v: 'grid' | 'list') => void;
   onSearch: (q: string) => void;
@@ -11,14 +12,66 @@ interface Props {
   onMoveSelected: () => void;
   onDeleteSelected: () => void;
   onClearSelection: () => void;
+  onRenameFolder: (id: number, newName: string) => void;
+  onDeleteFolder: (id: number) => void;
 }
 
-export default function TopBar({ folderName, viewMode, onViewChange, onSearch, searchQuery, onUpload, selectedCount, onMoveSelected, onDeleteSelected, onClearSelection }: Props) {
+export default function TopBar({ 
+  folderName, activeFolderId, viewMode, onViewChange, onSearch, searchQuery, 
+  onUpload, selectedCount, onMoveSelected, onDeleteSelected, onClearSelection,
+  onRenameFolder, onDeleteFolder 
+}: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [newName, setNewName] = useState(folderName);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  useEffect(() => { setNewName(folderName); setIsEditing(false); setDeleteConfirm(false); }, [folderName, activeFolderId]);
+
+  const handleRename = () => {
+    if (activeFolderId && newName.trim() && newName !== folderName) {
+      onRenameFolder(activeFolderId, newName.trim());
+    }
+    setIsEditing(false);
+  };
+
+  const handleDelete = () => {
+    if (!deleteConfirm) {
+      setDeleteConfirm(true);
+      setTimeout(() => setDeleteConfirm(false), 3000);
+    } else if (activeFolderId) {
+      onDeleteFolder(activeFolderId);
+      setDeleteConfirm(false);
+    }
+  };
 
   return (
     <div className="topbar">
-      <div className="topbar-title">{folderName}</div>
+      <div className="topbar-title-area">
+        {isEditing ? (
+          <input className="topbar-edit-input" value={newName} onChange={e => setNewName(e.target.value)} 
+            onKeyDown={e => e.key === 'Enter' && handleRename()} onBlur={handleRename} autoFocus />
+        ) : (
+          <div className="topbar-title">{folderName}</div>
+        )}
+
+        {activeFolderId && (
+          <div className="topbar-title-actions">
+            <button className="btn-icon-sm" onClick={() => setIsEditing(true)} title="Rename folder">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 2l3 3L5 14H2v-3L11 2z" />
+              </svg>
+            </button>
+            <button className={`btn-icon-sm ${deleteConfirm ? 'danger-active' : ''}`} onClick={handleDelete} title="Delete folder">
+              {deleteConfirm ? <span style={{ fontSize: 10, fontWeight: 600 }}>Sure?</span> : (
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 4h10M4 4v10a1 1 0 001 1h6a1 1 0 001-1V4M6 4V2a1 1 0 011-1h2a1 1 0 011 1v2" />
+                </svg>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="topbar-search">
         <svg className="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -37,7 +90,6 @@ export default function TopBar({ folderName, viewMode, onViewChange, onSearch, s
           </>
         ) : (
           <>
-            {/* View toggle */}
             <div style={{ display: 'flex', background: 'var(--bg-2)', borderRadius: 'var(--r-sm)', padding: 2, border: '1px solid var(--border)' }}>
               {(['grid', 'list'] as const).map(v => (
                 <button key={v} className="btn-icon" onClick={() => onViewChange(v)}

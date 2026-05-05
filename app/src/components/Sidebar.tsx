@@ -43,13 +43,7 @@ export default function Sidebar({ folders, activeFolderId, loading, onNewFolder,
 
         {folders.map(f => (
           <div key={f.id} className={`sidebar-item ${activeFolderId === f.id ? 'active' : ''}`}
-            onClick={() => navigate(`/dashboard/folder/${f.id}`)}
-            onContextMenu={e => {
-              e.preventDefault();
-              if (confirm(`Delete folder "${f.name}"? This will delete the Telegram channel permanently.`)) {
-                onDeleteFolder(f.id);
-              }
-            }}>
+            onClick={() => navigate(`/dashboard/folder/${f.id}`)}>
             <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M1 4a1 1 0 011-1h4l1.5 2H14a1 1 0 011 1v6a1 1 0 01-1 1H2a1 1 0 01-1-1V4z" />
             </svg>

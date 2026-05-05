@@ -82,6 +82,12 @@ class TelegramService {
     throw new Error('Failed to create folder');
   }
 
+  async renameFolder(folderId: number, name: string) {
+    if (!this.client) throw new Error('Client not connected');
+    await this.client.invoke(new Api.channels.EditTitle({ channel: folderId, title: name }));
+    return true;
+  }
+
   async deleteFolder(folderId: number) {
     if (!this.client) throw new Error('Client not connected');
     await this.client.invoke(new Api.channels.DeleteChannel({ channel: folderId }));
