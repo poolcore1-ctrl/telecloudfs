@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import path from 'path';
 
 export default defineConfig({
   plugins: [
@@ -21,14 +22,16 @@ export default defineConfig({
   resolve: {
     alias: {
       'big-integer': 'big-integer',
+      'socks': path.resolve(__dirname, './src/shim.js'),
+      'websocket': path.resolve(__dirname, './src/shim.js'),
+      'node-localstorage': path.resolve(__dirname, './src/shim.js'),
     }
   },
   optimizeDeps: {
-    include: ['telegram', 'big-integer', 'buffer', 'util', 'events', 'pako'],
+    exclude: ['telegram'],
   },
   build: {
     outDir: 'dist',
     target: 'esnext',
-    // Remove manualChunks for telegram to avoid interop issues
   },
 });
