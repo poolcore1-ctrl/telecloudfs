@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-interface Item { label: string; icon?: string; danger?: boolean; divider?: boolean; onClick?: () => void; }
+interface Item { label?: string; icon?: string; danger?: boolean; divider?: boolean; onClick?: () => void; }
 interface Props { x: number; y: number; items: Item[]; onClose: () => void; }
 
 export default function ContextMenu({ x, y, items, onClose }: Props) {
