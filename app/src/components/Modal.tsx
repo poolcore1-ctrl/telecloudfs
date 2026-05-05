@@ -1,17 +1,23 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { ReactNode } from 'react';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm?: () => void;
   title: string;
-  message: string;
+  message?: string;
   confirmText?: string;
   cancelText?: string;
   isDanger?: boolean;
+  children?: ReactNode;
+  showFooter?: boolean;
 }
 
-export default function Modal({ isOpen, onClose, onConfirm, title, message, confirmText = 'Confirm', cancelText = 'Cancel', isDanger = false }: Props) {
+export default function Modal({ 
+  isOpen, onClose, onConfirm, title, message, confirmText = 'Confirm', 
+  cancelText = 'Cancel', isDanger = false, children, showFooter = true 
+}: Props) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -28,14 +34,17 @@ export default function Modal({ isOpen, onClose, onConfirm, title, message, conf
               <button className="modal-close" onClick={onClose}>✕</button>
             </div>
             <div className="modal-body">
-              {message}
+              {message && <p>{message}</p>}
+              {children}
             </div>
-            <div className="modal-footer">
-              <button className="btn btn-ghost" onClick={onClose}>{cancelText}</button>
-              <button className={`btn ${isDanger ? 'btn-danger' : 'btn-primary'}`} onClick={() => { onConfirm(); onClose(); }}>
-                {confirmText}
-              </button>
-            </div>
+            {showFooter && (
+              <div className="modal-footer">
+                <button className="btn btn-ghost" onClick={onClose}>{cancelText}</button>
+                <button className={`btn ${isDanger ? 'btn-danger' : 'btn-primary'}`} onClick={() => { onConfirm?.(); onClose(); }}>
+                  {confirmText}
+                </button>
+              </div>
+            )}
           </motion.div>
         </div>
       )}

@@ -14,9 +14,9 @@ export default function MoveModal({ isOpen, onClose, onConfirm, folders, selecte
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      onConfirm={() => {}} // Not used as we have custom buttons
       title="Move Files"
       message={`Select destination for ${selectedCount} file(s):`}
+      showFooter={false}
     >
       <div className="move-list">
         <div className="move-item" onClick={() => { onConfirm(null); onClose(); }}>
