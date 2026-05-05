@@ -162,7 +162,8 @@ export default function DashboardPage() {
     const params = new URLSearchParams({
       n: file.name,
       s: file.size.toString(),
-      t: file.icon_type
+      t: file.icon_type,
+      tok: localStorage.getItem('token') || ''
     });
     const previewUrl = activeFolderId 
       ? `/preview/${activeFolderId}/${file.id}?${params.toString()}` 

@@ -62,7 +62,14 @@ export default function PreviewPage() {
 
   const getStreamUrl = () => {
     if (!fileData) return '';
-    return telegramService.getStreamingUrl(fileData.id, folderId ? parseInt(folderId) : null, fileData.name);
+    const url = telegramService.getStreamingUrl(fileData.id, folderId ? parseInt(folderId) : null, fileData.name);
+    // If we have a token in the URL params, ensure it's used if not already in the url
+    const urlObj = new URL(url, window.location.origin);
+    if (!urlObj.searchParams.has('t')) {
+      const tok = searchParams.get('tok');
+      if (tok) urlObj.searchParams.set('t', tok);
+    }
+    return urlObj.pathname + urlObj.search;
   };
 
   if (loading) return (
