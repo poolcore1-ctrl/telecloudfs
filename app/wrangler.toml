@@ -1,5 +1,5 @@
 name = "telecloud"
-pages_build_output_dir = ".pages"
+pages_build_output_dir = ".vercel/output/static"
 
 [[d1_databases]]
 binding = "DB"
