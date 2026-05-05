@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 interface Props {
   file: FileItem;
   selected: boolean;
-  onSelect: () => void;
+  onSelect: (e: React.MouseEvent) => void;
   onOpen: () => void;
   onContextMenu: (e: React.MouseEvent) => void;
 }

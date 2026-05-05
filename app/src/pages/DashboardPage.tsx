@@ -205,7 +205,7 @@ export default function DashboardPage() {
             <div className="file-grid">
               {filteredFiles.map(f => (
                 <FileCard key={f.id} file={f} selected={selected.has(f.id)}
-                  onSelect={e => { (e as any).stopPropagation?.(); toggleSelect(f.id); }}
+                  onSelect={e => { e.stopPropagation(); toggleSelect(f.id); }}
                   onOpen={() => openFile(f)}
                   onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, fileId: f.id }); }} />
               ))}
