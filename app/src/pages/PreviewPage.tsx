@@ -43,10 +43,11 @@ export default function PreviewPage() {
     if (!fileData) return '';
     const url = telegramService.getStreamingUrl(fileData.id, folderId ? parseInt(folderId) : null, fileData.name);
     const urlObj = new URL(url, window.location.origin);
-    if (!urlObj.searchParams.has('t')) {
-      const tok = searchParams.get('tok');
-      if (tok) urlObj.searchParams.set('t', tok);
-    }
+    
+    // Ensure the token from the URL params is attached to the stream URL
+    const tok = searchParams.get('tok') || searchParams.get('t');
+    if (tok) urlObj.searchParams.set('t', tok);
+    
     return urlObj.pathname + urlObj.search;
   };
 
@@ -56,6 +57,7 @@ export default function PreviewPage() {
   const isVideo = fileData.name.match(/\.(mp4|webm|ogg|mov)$/i);
   const isImage = fileData.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
   const isAudio = fileData.name.match(/\.(mp3|wav|ogg|m4a)$/i);
+  const isPDF = fileData.name.match(/\.(pdf)$/i);
 
   return (
     <div className="pure-preview">
@@ -66,6 +68,8 @@ export default function PreviewPage() {
           <video src={getStreamUrl()} controls className="preview-media-full" autoPlay />
         ) : isAudio ? (
           <audio src={getStreamUrl()} controls />
+        ) : isPDF ? (
+          <iframe src={getStreamUrl()} title={fileData.name} className="preview-iframe" />
         ) : (
           <div className="preview-generic">
             <FileTypeIcon type={fileData.icon_type} size={120} />
