@@ -6,8 +6,10 @@ import { useToast } from '../context/ToastContext';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import FileCard from '../components/FileCard';
+import FileListItem from '../components/FileListItem';
 import ContextMenu from '../components/ContextMenu';
 import Modal from '../components/Modal';
+import MoveModal from '../components/MoveModal';
 
 export default function DashboardPage() {
   const { folderId } = useParams();
@@ -90,12 +92,33 @@ export default function DashboardPage() {
   const deleteFiles = async (ids: number[]) => {
     toast(`Deleting ${ids.length} file(s)...`, 'info');
     try {
-      for (const id of ids) await telegramService.deleteFile(id, activeFolderId);
+      await telegramService.deleteFiles(ids, activeFolderId);
       setFiles(prev => prev.filter(f => !ids.includes(f.id)));
       setSelected(new Set());
       toast(`${ids.length} file(s) deleted`, 'success');
     } catch (e: any) { toast(e.message, 'error'); }
   };
+
+  const moveSelected = async (targetFolderId: number | null) => {
+    if (targetFolderId === activeFolderId) return;
+    const ids = Array.from(selected);
+    toast(`Moving ${ids.length} file(s)...`, 'info');
+    try {
+      await telegramService.moveFiles(ids, activeFolderId, targetFolderId);
+      setFiles(prev => prev.filter(f => !ids.includes(f.id)));
+      setSelected(new Set());
+      toast(`${ids.length} file(s) moved`, 'success');
+    } catch (e: any) { toast(e.message, 'error'); }
+  };
+
+  const createFolder = useCallback(async (name: string) => {
+    try {
+      const folder = await telegramService.createFolder(name);
+      setFolders(prev => [...prev, folder]);
+      toast(`Folder "${name}" created`, 'success');
+      navigate(`/dashboard/folder/${folder.id}`);
+    } catch (e: any) { toast(e.message, 'error'); }
+  }, [navigate, toast]);
 
   const renameFolder = useCallback(async (id: number, name: string) => {
     try {
@@ -115,7 +138,7 @@ export default function DashboardPage() {
   }, [activeFolderId, navigate, toast]);
 
   const selectAll = () => {
-    if (selected.size === filteredFiles.length) setSelected(new Set());
+    if (selected.size === filteredFiles.length && filteredFiles.length > 0) setSelected(new Set());
     else setSelected(new Set(filteredFiles.map(f => f.id)));
   };
 
@@ -165,10 +188,17 @@ export default function DashboardPage() {
           ) : filteredFiles.length > 0 ? (
             <div className={viewMode === 'grid' ? 'file-grid' : 'file-list'}>
               {filteredFiles.map(f => (
-                <FileCard key={f.id} file={f} selected={selected.has(f.id)}
-                  onSelect={e => { e.stopPropagation(); const s = new Set(selected); if (s.has(f.id)) s.delete(f.id); else s.add(f.id); setSelected(s); }}
-                  onOpen={() => openFile(f)}
-                  onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, fileId: f.id }); }} />
+                viewMode === 'grid' ? (
+                  <FileCard key={f.id} file={f} selected={selected.has(f.id)}
+                    onSelect={e => { e.stopPropagation(); const s = new Set(selected); if (s.has(f.id)) s.delete(f.id); else s.add(f.id); setSelected(s); }}
+                    onOpen={() => openFile(f)}
+                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, fileId: f.id }); }} />
+                ) : (
+                  <FileListItem key={f.id} file={f} selected={selected.has(f.id)}
+                    onSelect={e => { e.stopPropagation(); const s = new Set(selected); if (s.has(f.id)) s.delete(f.id); else s.add(f.id); setSelected(s); }}
+                    onOpen={() => openFile(f)}
+                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtx({ x: e.clientX, y: e.clientY, fileId: f.id }); }} />
+                )
               ))}
             </div>
           ) : (
@@ -184,6 +214,7 @@ export default function DashboardPage() {
       {ctx && <ContextMenu x={ctx.x} y={ctx.y} items={[
         { label: 'Open', onClick: () => openFile(files.find(f => f.id === ctx.fileId)!) },
         { label: 'Download', onClick: () => downloadFile(files.find(f => f.id === ctx.fileId)!) },
+        { label: 'Move to...', onClick: () => { setSelected(new Set([ctx.fileId])); setShowMove(true); } },
         { divider: true },
         { label: 'Delete', danger: true, onClick: () => setDeleteModal({ isOpen: true, fileIds: [ctx.fileId] }) }
       ]} onClose={() => setCtx(null)} />}
@@ -196,6 +227,14 @@ export default function DashboardPage() {
         message={`Are you sure you want to delete ${deleteModal.fileIds.length} file(s) permanently?`}
         isDanger={true}
         confirmText="Delete"
+      />
+
+      <MoveModal 
+        isOpen={showMove} 
+        onClose={() => setShowMove(false)} 
+        onConfirm={moveSelected}
+        folders={folders.filter(f => f.id !== activeFolderId)}
+        selectedCount={selected.size}
       />
 
       {/* New Folder Modal */}

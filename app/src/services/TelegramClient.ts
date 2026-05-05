@@ -158,6 +158,11 @@ class TelegramService {
     await this.client.deleteMessages(folderId ?? 'me', [messageId], { revoke: true });
   }
 
+  async deleteFiles(messageIds: number[], folderId: number | null) {
+    if (!this.client) throw new Error('Client not connected');
+    await this.client.deleteMessages(folderId ?? 'me', messageIds, { revoke: true });
+  }
+
   async moveFiles(messageIds: number[], sourceFolderId: number | null, targetFolderId: number | null) {
     if (!this.client) throw new Error('Client not connected');
     await this.client.forwardMessages(targetFolderId ?? 'me', { messages: messageIds, fromPeer: sourceFolderId ?? 'me' });

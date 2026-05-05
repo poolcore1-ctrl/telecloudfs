@@ -1,27 +1,39 @@
 import { Folder } from '../types';
+import Modal from './Modal';
 
-interface Props { folders: Folder[]; currentFolderId: number | null; onMove: (targetId: number | null) => Promise<void>; onClose: () => void; }
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (targetFolderId: number | null) => void;
+  folders: Folder[];
+  selectedCount: number;
+}
 
-export default function MoveModal({ folders, currentFolderId, onMove, onClose }: Props) {
-  const targets = [{ id: null as number | null, name: 'Home (Saved Messages)' }, ...folders.filter(f => f.id !== currentFolderId).map(f => ({ id: f.id, name: f.name }))];
-
+export default function MoveModal({ isOpen, onClose, onConfirm, folders, selectedCount }: Props) {
   return (
-    <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
-        <div className="modal-title">Move Files</div>
-        <div className="modal-sub">Select a destination folder.</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 300, overflowY: 'auto' }}>
-          {targets.map(t => (
-            <button key={String(t.id)} className="btn btn-ghost" style={{ justifyContent: 'flex-start', gap: 10 }}
-              onClick={() => { onMove(t.id); onClose(); }}>
-              <span>📁</span> {t.name}
-            </button>
-          ))}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      onConfirm={() => {}} // Not used as we have custom buttons
+      title="Move Files"
+      message={`Select destination for ${selectedCount} file(s):`}
+    >
+      <div className="move-list">
+        <div className="move-item" onClick={() => { onConfirm(null); onClose(); }}>
+          <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M2 5a1 1 0 011-1h3.5L8 6h6a1 1 0 011 1v6a1 1 0 01-1 1H3a1 1 0 01-1-1V5z" />
+          </svg>
+          All Files (Home)
         </div>
-        <div className="modal-actions">
-          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-        </div>
+        {folders.map(f => (
+          <div key={f.id} className="move-item" onClick={() => { onConfirm(f.id); onClose(); }}>
+            <svg className="icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M1 4a1 1 0 011-1h4l1.5 2H14a1 1 0 011 1v6a1 1 0 01-1 1H2a1 1 0 01-1-1V4z" />
+            </svg>
+            {f.name}
+          </div>
+        ))}
       </div>
-    </div>
+    </Modal>
   );
 }

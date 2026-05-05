@@ -342,6 +342,35 @@ input::placeholder { color: var(--text-3); }
   line-height: 1.5;
 }
 
+.move-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.move-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text-1);
+}
+
+.move-item:hover {
+  background: var(--bg-hover);
+}
+
+.move-item .icon {
+  width: 16px;
+  color: var(--text-3);
+}
+
 .modal-footer {
   padding: 12px 20px;
   display: flex;
