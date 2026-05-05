@@ -1,5 +1,5 @@
-import { TelegramClient, Api } from 'telegram';
-import { StringSession } from 'telegram/sessions';
+import { TelegramClient, Api, sessions } from 'telegram';
+const { StringSession } = sessions;
 import { SecurityService } from './Security';
 
 class TelegramService {

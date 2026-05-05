@@ -14,6 +14,10 @@ export default defineConfig({
       },
     }),
   ],
+  define: {
+    'process.env': {},
+    'process.browser': true,
+  },
   resolve: {
     alias: {
       'big-integer': 'big-integer',
@@ -21,23 +25,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['telegram', 'big-integer', 'buffer', 'util', 'events', 'pako'],
-    esbuildOptions: {
-      target: 'esnext',
-      supported: {
-        'top-level-await': true
-      }
-    }
   },
   build: {
     outDir: 'dist',
     target: 'esnext',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          react: ['react', 'react-dom', 'react-router-dom'],
-          telegram: ['telegram'],
-        },
-      },
-    },
+    // Remove manualChunks for telegram to avoid interop issues
   },
 });
