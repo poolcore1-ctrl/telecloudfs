@@ -1,0 +1,11 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/page": "/",
+  "/s3/[folderId]/[messageId]/page": "/s3/[folderId]/[messageId]",
+  "/dashboard/page": "/dashboard",
+  "/dashboard/[folderId]/page": "/dashboard/[folderId]",
+  "/dashboard/settings/page": "/dashboard/settings",
+  "/api/s3/[...path]/route": "/api/s3/[...path]",
+  "/api/vault/route": "/api/vault",
+  "/api/keys/route": "/api/keys"
+}

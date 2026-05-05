@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/keys": {},
+    "/api/vault": {},
+    "/api/s3/[...path]": {}
+  }
+}

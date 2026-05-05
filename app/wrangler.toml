@@ -1,0 +1,7 @@
+name = "telecloud"
+pages_build_output_dir = ".pages"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "drive_vault"
+database_id = "1a07416a-d09e-423c-9eba-8fa2522bb92b"
