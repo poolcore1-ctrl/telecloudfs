@@ -1,3 +1,4 @@
+// Shim for Node.js modules in the browser
 const os = {
   type: () => 'Browser',
   release: () => '1.0.0',
@@ -20,3 +21,9 @@ export default os;
 export const type = os.type;
 export const release = os.release;
 export const platform = os.platform;
+
+// WebSocket shim for GramJS
+export const w3cwebsocket = typeof window !== 'undefined' ? window.WebSocket : null;
+
+// Empty objects for others
+export const SocksClient = {};
