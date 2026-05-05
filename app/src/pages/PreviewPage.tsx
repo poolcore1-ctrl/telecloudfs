@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { telegramService } from '../services/TelegramClient';
 import FileTypeIcon from '../components/FileTypeIcon';
 import { formatBytes, formatDate } from '../utils';
 
 export default function PreviewPage() {
   const { fileId, folderId } = useParams();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fileData, setFileData] = useState<any>(null);
@@ -17,27 +18,44 @@ export default function PreviewPage() {
         const foldId = folderId ? parseInt(folderId) : null;
         if (!fid) throw new Error('Invalid File ID');
 
-        // We need a way to fetch file metadata without being logged in
-        // For now, we'll try to get it from the service
-        // Note: This might require the service to have a "public" mode or the API to support it
+        // Check if metadata is in URL
+        const name = searchParams.get('n');
+        const size = searchParams.get('s');
+        const type = searchParams.get('t');
+
+        if (name && size && type) {
+          setFileData({
+            id: fid,
+            name,
+            size: parseInt(size),
+            icon_type: type,
+            date: Date.now() / 1000 // Fallback date
+          });
+          setLoading(false);
+          return;
+        }
+
+        // If not in URL, try to fetch (requires login)
         const list = await telegramService.getFiles(foldId);
         const file = list.find(f => f.id === fid);
         if (!file) throw new Error('File not found or access denied');
         
         setFileData(file);
       } catch (e: any) {
-        setError(e.message);
+        // If we have params but fetching failed (e.g. not logged in), 
+        // we already handled it above. This catch is for when params are missing.
+        setError(e.message === 'Client not connected' ? 'Please log in to view this file or use a public share link.' : e.message);
       } finally {
         setLoading(false);
       }
     })();
-  }, [fileId, folderId]);
+  }, [fileId, folderId, searchParams]);
 
   const handleDownload = () => {
     if (!fileData) return;
     const url = telegramService.getStreamingUrl(fileData.id, folderId ? parseInt(folderId) : null, fileData.name);
     const a = document.createElement('a');
-    a.href = url + '?download=1';
+    a.href = url + '&download=1';
     a.download = fileData.name;
     a.click();
   };
@@ -47,8 +65,22 @@ export default function PreviewPage() {
     return telegramService.getStreamingUrl(fileData.id, folderId ? parseInt(folderId) : null, fileData.name);
   };
 
-  if (loading) return <div className="preview-layout"><div className="spinner" /></div>;
-  if (error) return <div className="preview-layout"><div className="error-box">{error}</div></div>;
+  if (loading) return (
+    <div className="preview-layout" style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <div className="spinner" />
+    </div>
+  );
+
+  if (error && !fileData) return (
+    <div className="preview-layout" style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <div className="error-box" style={{ background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '32px', borderRadius: '16px' }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+        <h3 style={{ color: 'var(--text-1)', marginBottom: '8px' }}>Private File</h3>
+        <p style={{ color: 'var(--text-3)', fontSize: '14px' }}>{error}</p>
+        <button className="btn btn-primary" style={{ marginTop: '24px' }} onClick={() => window.location.href = '/login'}>Log In to View</button>
+      </div>
+    </div>
+  );
 
   const isVideo = fileData.name.match(/\.(mp4|webm|ogg|mov)$/i);
   const isImage = fileData.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
@@ -58,7 +90,10 @@ export default function PreviewPage() {
     <div className="preview-layout">
       <div className="preview-header">
         <div className="preview-logo">☁️ TeleCloudFS</div>
-        <button className="btn btn-primary btn-sm" onClick={handleDownload}>Download</button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button className="btn btn-ghost btn-sm" onClick={() => window.location.href = '/dashboard'}>Dashboard</button>
+          <button className="btn btn-primary btn-sm" onClick={handleDownload}>Download</button>
+        </div>
       </div>
 
       <div className="preview-content">
@@ -66,7 +101,7 @@ export default function PreviewPage() {
           {isImage ? (
             <img src={getStreamUrl()} alt={fileData.name} className="preview-media" />
           ) : isVideo ? (
-            <video src={getStreamUrl()} controls className="preview-media" />
+            <video src={getStreamUrl()} controls className="preview-media" autoPlay />
           ) : isAudio ? (
             <audio src={getStreamUrl()} controls className="preview-media" />
           ) : (
@@ -90,7 +125,7 @@ export default function PreviewPage() {
              <button className="btn btn-ghost btn-full" onClick={() => {
                navigator.clipboard.writeText(window.location.href);
                alert('Link copied to clipboard!');
-             }}>Copy Link</button>
+             }}>Copy Share Link</button>
           </div>
         </div>
       </div>

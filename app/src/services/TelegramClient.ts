@@ -207,7 +207,10 @@ class TelegramService {
 
   getStreamingUrl(messageId: number, folderId: number | null, fileName: string) {
     const fp = folderId === null ? 'home' : String(folderId);
-    return `/stream/${fp}/${messageId}/${encodeURIComponent(fileName)}`;
+    let url = `/stream/${fp}/${messageId}/${encodeURIComponent(fileName)}`;
+    const token = localStorage.getItem('token');
+    if (token) url += `?t=${token}`;
+    return url;
   }
 
   setupServiceWorkerHandler() {

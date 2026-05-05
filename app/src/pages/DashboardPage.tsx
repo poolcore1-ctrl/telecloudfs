@@ -159,7 +159,14 @@ export default function DashboardPage() {
   };
 
   const openFile = (file: FileItem) => {
-    const previewUrl = activeFolderId ? `/preview/${activeFolderId}/${file.id}` : `/preview/${file.id}`;
+    const params = new URLSearchParams({
+      n: file.name,
+      s: file.size.toString(),
+      t: file.icon_type
+    });
+    const previewUrl = activeFolderId 
+      ? `/preview/${activeFolderId}/${file.id}?${params.toString()}` 
+      : `/preview/${file.id}?${params.toString()}`;
     window.open(previewUrl, '_blank');
   };
 
