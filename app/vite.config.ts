@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [
     react(),
     nodePolyfills({
-      include: ['buffer', 'process', 'util', 'events', 'stream', 'path'],
+      include: ['buffer', 'process', 'util', 'events', 'stream', 'path', 'crypto', 'zlib'],
       globals: {
         Buffer: true,
         global: true,
@@ -14,6 +14,15 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      // GramJS specific fixes
+      'big-integer': 'big-integer',
+    }
+  },
+  optimizeDeps: {
+    include: ['telegram', 'big-integer', 'buffer', 'util', 'events'],
+  },
   build: {
     outDir: 'dist',
     rollupOptions: {
