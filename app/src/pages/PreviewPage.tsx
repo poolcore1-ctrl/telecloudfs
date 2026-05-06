@@ -21,6 +21,7 @@ export default function PreviewPage() {
         let type = searchParams.get('t');
         let tok = searchParams.get('tok') || searchParams.get('t');
         let ah = searchParams.get('ah');
+        let bt = ''; 
 
         // Handle Short Link /s/:id
         if (shareId) {
@@ -32,11 +33,13 @@ export default function PreviewPage() {
           name = data.name;
           size = data.size;
           type = data.type;
+          ah = data.accessHash; // Crucial for bots to find the file
+          
           // For short links, prioritize Bot connection for public access
           if (data.botToken) {
             try {
               await telegramService.connectWithBot(data.apiId, data.apiHash, data.botToken);
-              tok = 'BOT'; // Placeholder to indicate bot is used
+              tok = 'BOT'; 
               bt = data.botToken;
             } catch (e) { console.warn('Bot connect failed:', e); }
           } else {
@@ -44,7 +47,6 @@ export default function PreviewPage() {
           }
         }
 
-        let bt = ''; // Bot Token storage for the stream URL
         const p = searchParams.get('p');
         if (p) {
           try {
