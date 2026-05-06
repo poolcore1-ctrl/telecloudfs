@@ -9,6 +9,7 @@ export default function PreviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fileData, setFileData] = useState<any>(null);
+  const [keys, setKeys] = useState<{ t: string, a: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -17,20 +18,29 @@ export default function PreviewPage() {
         const foldId = folderId ? parseInt(folderId) : null;
         if (!fid) throw new Error('Invalid File ID');
 
+        // Decode obfuscated keys
+        const p = searchParams.get('p');
+        let decodedKeys = null;
+        if (p) {
+          try {
+            decodedKeys = JSON.parse(atob(p));
+            setKeys(decodedKeys);
+          } catch (e) { console.error('Failed to decode keys'); }
+        }
+
         const name = searchParams.get('n');
         const size = searchParams.get('s');
         const type = searchParams.get('t');
 
-        const tok = searchParams.get('tok') || searchParams.get('t');
-        if (tok) {
-          try {
-            const { apiId, apiHash } = await telegramService.loadFromVault(tok);
-            await telegramService.connect(apiId, apiHash);
-          } catch (e) { console.warn('Guest connect failed:', e); }
-        }
-
         if (name && size && type) {
           setFileData({ id: fid, name, size: parseInt(size), icon_type: type });
+          
+          if (decodedKeys?.t) {
+            try {
+              const { apiId, apiHash } = await telegramService.loadFromVault(decodedKeys.t);
+              await telegramService.connect(apiId, apiHash);
+            } catch (e) { console.warn('Guest connect failed:', e); }
+          }
           setLoading(false);
           return;
         }
@@ -40,7 +50,7 @@ export default function PreviewPage() {
         if (!file) throw new Error('File not found');
         setFileData(file);
       } catch (e: any) {
-        setError(e.message === 'Client not connected' ? 'Please log in or use a valid share link.' : e.message);
+        setError(e.message === 'Client not connected' ? 'Invalid or expired share link.' : e.message);
       } finally {
         setLoading(false);
       }
@@ -52,11 +62,8 @@ export default function PreviewPage() {
     const url = telegramService.getStreamingUrl(fileData.id, folderId ? parseInt(folderId) : null, fileData.name);
     const urlObj = new URL(url, window.location.origin);
     
-    // Ensure the token and access hash from the URL params are attached to the stream URL
-    const tok = searchParams.get('tok') || searchParams.get('t');
-    if (tok) urlObj.searchParams.set('t', tok);
-    const ah = searchParams.get('ah');
-    if (ah) urlObj.searchParams.set('ah', ah);
+    if (keys?.t) urlObj.searchParams.set('t', keys.t);
+    if (keys?.a) urlObj.searchParams.set('ah', keys.a);
     
     return urlObj.pathname + urlObj.search;
   };
@@ -64,10 +71,14 @@ export default function PreviewPage() {
   if (loading) return <div className="pure-preview"><div className="spinner" /></div>;
   if (error && !fileData) return <div className="pure-preview"><div className="error-box">{error}</div></div>;
 
-  const isVideo = fileData.name.match(/\.(mp4|webm|ogg|mov)$/i);
-  const isImage = fileData.name.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i);
-  const isAudio = fileData.name.match(/\.(mp3|wav|ogg|m4a)$/i);
-  const isPDF = fileData.name.match(/\.(pdf)$/i);
+  const ext = fileData.name.split('.').pop()?.toLowerCase() || '';
+  const isVideo = ['mp4', 'webm', 'ogg', 'mov'].includes(ext);
+  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+  const isAudio = ['mp3', 'wav', 'ogg', 'm4a'].includes(ext);
+  const isPDF = ext === 'pdf';
+  const isCSV = ext === 'csv';
+  const isDoc = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext);
+  const isText = ['txt', 'md', 'js', 'ts', 'tsx', 'css', 'json', 'html', 'py', 'go', 'rs', 'php', 'c', 'cpp'].includes(ext);
 
   return (
     <div className="pure-preview">
@@ -79,11 +90,34 @@ export default function PreviewPage() {
         ) : isAudio ? (
           <audio src={getStreamUrl()} controls />
         ) : isPDF ? (
-          <iframe src={getStreamUrl()} title={fileData.name} className="preview-iframe" />
+          <div className="pdf-container">
+            <iframe src={getStreamUrl() + '#toolbar=0'} title={fileData.name} className="preview-iframe" />
+          </div>
+        ) : isCSV || isText ? (
+          <div className="text-viewer-container">
+            <div className="text-viewer-header">
+              <span>{isCSV ? 'Spreadsheet Preview' : 'Document Preview'}</span>
+            </div>
+            <iframe src={getStreamUrl()} title={fileData.name} className="preview-iframe text-viewer" />
+          </div>
+        ) : isDoc ? (
+          <div className="preview-generic">
+            <div className="doc-preview-card">
+              <FileTypeIcon type="file" size={80} />
+              <div className="preview-filename-large">{fileData.name}</div>
+              <p className="doc-hint">Office documents require server-side conversion for browser rendering. Download to view with full formatting.</p>
+              <button className="btn btn-primary btn-lg" onClick={() => {
+                const a = document.createElement('a'); a.href = getStreamUrl() + '&download=1'; a.download = fileData.name; a.click();
+              }}>Download & Open</button>
+            </div>
+          </div>
         ) : (
           <div className="preview-generic">
             <FileTypeIcon type={fileData.icon_type} size={120} />
             <div className="preview-filename-large">{fileData.name}</div>
+            <button className="btn btn-ghost" onClick={() => {
+              const a = document.createElement('a'); a.href = getStreamUrl() + '&download=1'; a.download = fileData.name; a.click();
+            }}>Download File</button>
           </div>
         )}
       </div>
