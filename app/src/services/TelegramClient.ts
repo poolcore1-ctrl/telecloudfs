@@ -240,13 +240,15 @@ class TelegramService {
     if (folderId && accessHash && accessHash !== '0') {
       peer = new Api.InputPeerChannel({ channelId: BigInt(folderId), accessHash: BigInt(accessHash) });
     }
-    // Force entity resolution for guest clients
-    try { await this.client.getEntity(peer); } catch (e) { console.warn('Peer resolution failed:', e); }
+    
+    // Always fetch fresh message to get the current file_reference
     const messages = await this.client.getMessages(peer, { ids: [messageId] });
     if (!messages.length || !messages[0].media) return null;
+    
     const media = messages[0].media as any;
     const doc = media.document; const photo = media.photo;
     let fileName = 'file', totalSize = 0, mimeType = 'application/octet-stream';
+    
     if (doc) {
       totalSize = Number(doc.size); mimeType = doc.mimeType;
       for (const a of doc.attributes || []) if (a.className === 'DocumentAttributeFilename') fileName = a.fileName;
@@ -290,12 +292,15 @@ class TelegramService {
     if (folderId && accessHash && accessHash !== '0') {
       peer = new Api.InputPeerChannel({ channelId: BigInt(folderId), accessHash: BigInt(accessHash) });
     }
-    try { await this.client.getEntity(peer); } catch (e) { console.warn('Peer resolution failed:', e); }
+
+    // Refresh media reference for EVERY chunk to be safe (or on failure)
     const messages = await this.client.getMessages(peer, { ids: [messageId] });
     if (!messages.length || !messages[0].media) throw new Error('File not found');
+    
     const media = messages[0].media;
-    const totalSize = Number((media as any).document?.size || 0);
-    const mimeType = (media as any).document?.mimeType || 'application/octet-stream';
+    const totalSize = Number((media as any).document?.size || (media as any).photo?.sizes.slice(-1)[0]?.size || 0);
+    const mimeType = (media as any).document?.mimeType || 'image/jpeg';
+    
     // @ts-ignore
     const buffer = await this.client.downloadFile(media, { start, end, workers: 4 });
     return { data: buffer, totalSize, mimeType };
