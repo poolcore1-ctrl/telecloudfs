@@ -41,6 +41,18 @@ export default function PreviewPage() {
               await telegramService.connect(apiId, apiHash);
             } catch (e) { console.warn('Guest connect failed:', e); }
           }
+
+          // Handle Direct View redirect
+          if (searchParams.get('d') === '1') {
+            const file = { id: fid, name, size: parseInt(size), icon_type: type };
+            const url = telegramService.getStreamingUrl(file.id, foldId, file.name);
+            const urlObj = new URL(url, window.location.origin);
+            if (decodedKeys?.t) urlObj.searchParams.set('t', decodedKeys.t);
+            if (decodedKeys?.a) urlObj.searchParams.set('ah', decodedKeys.a);
+            window.location.replace(urlObj.pathname + urlObj.search);
+            return;
+          }
+
           setLoading(false);
           return;
         }

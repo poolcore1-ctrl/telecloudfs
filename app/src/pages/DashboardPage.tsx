@@ -168,6 +168,7 @@ export default function DashboardPage() {
       n: file.name,
       s: file.size.toString(),
       t: file.icon_type,
+      d: '1', // Direct view flag
       // Use 'p' for payload to hide it's a token
       p: btoa(JSON.stringify({ t: token, a: ah }))
     });
