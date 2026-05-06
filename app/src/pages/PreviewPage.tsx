@@ -44,7 +44,12 @@ export default function PreviewPage() {
           const res = await fetch(`/api/share/${shareId}`);
           if (!res.ok) throw new Error('Share link expired or invalid');
           const data = await res.json();
-          fid = data.message_id; foldId = data.folder_id; name = data.name; size = data.size; type = data.type; ah = data.accessHash;
+          fid = data.message_id || data.messageId; 
+          foldId = data.folder_id || data.folderId; 
+          name = data.name; 
+          size = data.size; 
+          type = data.type; 
+          ah = data.access_hash || data.accessHash;
           
           if (data.botToken) {
             try {
