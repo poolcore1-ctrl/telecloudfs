@@ -238,12 +238,20 @@ class TelegramService {
     if (!this.client) throw new Error('Client not connected');
     let peer: any = folderId ?? 'me';
     if (folderId && accessHash && accessHash !== '0') {
-      peer = new Api.InputPeerChannel({ channelId: BigInt(folderId), accessHash: BigInt(accessHash) });
+      try {
+        // Try to get the entity from cache first (fast for logged-in users)
+        peer = await this.client.getEntity(folderId);
+      } catch (e) {
+        // Fallback for bots/guests: manually construct the peer
+        peer = new Api.InputPeerChannel({ channelId: BigInt(folderId), accessHash: BigInt(accessHash) });
+      }
     }
     
-    // Always fetch fresh message to get the current file_reference
+    // Ensure the client "knows" this peer before fetching messages
+    try { await this.client.getEntity(peer); } catch (e) { /* Ignore if it fails, getMessages might still work */ }
+
     const messages = await this.client.getMessages(peer, { ids: [messageId] });
-    if (!messages.length || !messages[0].media) return null;
+    if (!messages || !messages.length || !messages[0].media) return null;
     
     const media = messages[0].media as any;
     const doc = media.document; const photo = media.photo;
@@ -290,12 +298,16 @@ class TelegramService {
     if (!this.client) throw new Error('Client not connected');
     let peer: any = folderId ?? 'me';
     if (folderId && accessHash && accessHash !== '0') {
-      peer = new Api.InputPeerChannel({ channelId: BigInt(folderId), accessHash: BigInt(accessHash) });
+      try {
+        peer = await this.client.getEntity(folderId);
+      } catch (e) {
+        peer = new Api.InputPeerChannel({ channelId: BigInt(folderId), accessHash: BigInt(accessHash) });
+      }
     }
 
-    // Refresh media reference for EVERY chunk to be safe (or on failure)
+    // Refresh media reference for EVERY chunk to be safe
     const messages = await this.client.getMessages(peer, { ids: [messageId] });
-    if (!messages.length || !messages[0].media) throw new Error('File not found');
+    if (!messages || !messages.length || !messages[0].media) throw new Error('File not found');
     
     const media = messages[0].media;
     const totalSize = Number((media as any).document?.size || (media as any).photo?.sizes.slice(-1)[0]?.size || 0);
