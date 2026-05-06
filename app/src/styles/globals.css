@@ -398,6 +398,196 @@ input::placeholder { color: var(--text-3); }
 .upload-item:last-child { margin-bottom: 0; }
 .upload-item-name { font-size: 13px; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 5px; }
 
+/* ── Premium Settings UI ── */
+.settings-container {
+  padding-bottom: 80px;
+}
+
+.premium-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.card-header {
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-1);
+  margin-bottom: 4px;
+}
+
+.card-desc {
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.card-body {
+  padding: 32px;
+}
+
+.premium-input {
+  background: var(--bg-1) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 10px !important;
+  padding: 10px 16px !important;
+  font-size: 14px !important;
+  color: var(--text-1) !important;
+  transition: all 0.2s ease;
+}
+
+.premium-input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.1) !important;
+}
+
+.bot-card {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.bot-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary-dim);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.bot-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--primary-dim);
+  color: var(--primary);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bot-icon svg { width: 20px; height: 20px; }
+
+.bot-info { flex: 1; min-width: 0; }
+
+.bot-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bot-token-preview {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+.bot-delete {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.bot-delete:hover {
+  background: rgba(255, 69, 58, 0.1);
+  color: #ff453a;
+}
+
+.bot-delete svg { width: 18px; height: 18px; }
+
+.new-key-alert {
+  background: rgba(92,168,122,0.05);
+  border: 1px solid rgba(92,168,122,0.2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.key-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.key-display code {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-1);
+  word-break: break-all;
+}
+
+.key-display button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.key-row-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.key-row-premium:last-child { border-bottom: none; }
+
+.key-label { font-size: 14px; font-weight: 600; color: var(--text-1); }
+.key-id { font-size: 11px; color: var(--text-3); font-family: var(--font-mono); }
+
+.btn-danger-text {
+  background: none;
+  border: none;
+  color: #ff453a;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.btn-danger-text:hover { background: rgba(255, 69, 58, 0.1); }
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-3);
+  font-size: 14px;
+  background: var(--bg-2);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+@media (max-width: 600px) {
+  .bot-add-form { grid-template-columns: 1fr !important; }
+}
+
 /* ── API key table ── */
 .key-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border); }
 .key-row:last-child { border-bottom: none; }

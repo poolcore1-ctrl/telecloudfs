@@ -145,6 +145,38 @@ class TelegramService {
     return true;
   }
 
+  async syncBotsWithFolders() {
+    if (!this.client) throw new Error('Client not connected');
+    const folders = await this.scanFolders();
+    const res = await fetch('/api/bots');
+    if (!res.ok) return;
+    const bots = await res.json();
+    const botTokens = bots.map((b: any) => b.token);
+
+    for (const folder of folders) {
+      for (const token of botTokens) {
+        try {
+          const botId = token.split(':')[0];
+          await this.client.invoke(new Api.channels.EditAdmin({
+            channel: folder.id,
+            userId: botId,
+            adminRights: new Api.ChatAdminRights({
+              changeInfo: true,
+              postMessages: true,
+              editMessages: true,
+              deleteMessages: true,
+              inviteUsers: true,
+              manageCall: true,
+              other: true
+            }),
+            rank: 'TeleCloudFS Bot'
+          }));
+          console.log(`Synced bot ${botId} to folder ${folder.name}`);
+        } catch (e) { console.warn(`Failed to sync bot to ${folder.name}:`, e); }
+      }
+    }
+  }
+
   async getFiles(folderId: number | null) {
     if (!this.client) throw new Error('Client not connected');
     const peer = folderId ?? 'me';
