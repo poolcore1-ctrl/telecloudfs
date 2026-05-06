@@ -48,8 +48,13 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     // Simple rotation: pick a random bot if available
     const botToken = botTokens.length > 0 ? botTokens[Math.floor(Math.random() * botTokens.length)] : null;
 
-    // Create shares table with expires_at (defaults to 24h later)
-    await env.DB.prepare('CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, folder_id INTEGER, message_id INTEGER, access_hash TEXT, name TEXT, size INTEGER, type TEXT, bot_token TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME)').run();
+    // Create shares table if not exists
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, folder_id INTEGER, message_id INTEGER, access_hash TEXT, name TEXT, size INTEGER, type TEXT, bot_token TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)').run();
+    
+    // Migration: Add expires_at if it's an old table
+    try {
+      await env.DB.prepare('ALTER TABLE shares ADD COLUMN expires_at DATETIME').run();
+    } catch (e) { /* Ignore if column exists */ }
     
     // Set expiration to 24 hours from now
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().replace('T', ' ').split('.')[0];
