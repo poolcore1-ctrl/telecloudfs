@@ -50,19 +50,40 @@ export default function DashboardPage() {
   const [page, setPage] = useState(1);
   const pageSize = 60;
 
-  // Load files
+  // Load files and sync with registry
   useEffect(() => {
     (async () => {
       setFilesLoading(true);
       setSelected(new Set());
-      setPage(1); // Reset page on folder change
+      setPage(1);
       try {
         const list = await telegramService.getFiles(activeFolderId);
         setFiles(list);
+
+        // Background indexing for permanent links
+        const activeFolder = folders.find(f => f.id === activeFolderId);
+        const folderPath = activeFolder ? `/${activeFolder.name}` : '/home';
+        
+        // Sync files in background
+        Promise.all(list.slice(0, 100).map(file => fetch('/api/p/sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: `${activeFolderId || 0}_${file.id}`,
+            path: `${folderPath}/${file.name}`,
+            folderId: activeFolderId,
+            messageId: file.id,
+            accessHash: activeFolder?.access_hash || '0',
+            name: file.name,
+            size: file.size,
+            type: file.icon_type
+          })
+        }))).catch(err => console.warn('Registry sync failed:', err));
+
       } catch (e: any) { toast(e.message, 'error'); }
       finally { setFilesLoading(false); }
     })();
-  }, [activeFolderId, toast]);
+  }, [activeFolderId, folders, toast]);
 
   // Derived stats
   const stats = useMemo(() => {
@@ -265,8 +286,8 @@ export default function DashboardPage() {
         { label: 'Delete', danger: true, onClick: () => setDeleteModal({ isOpen: true, fileIds: [ctx.fileId] }) }
       ]} onClose={() => setCtx(null)} />}
 
-      <Modal 
-        isOpen={deleteModal.isOpen} 
+      <Modal
+        isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, fileIds: [] })}
         onConfirm={() => deleteFiles(deleteModal.fileIds)}
         title="Delete Files"
@@ -275,9 +296,9 @@ export default function DashboardPage() {
         confirmText="Delete"
       />
 
-      <MoveModal 
-        isOpen={showTransfer} 
-        onClose={() => setShowTransfer(false)} 
+      <MoveModal
+        isOpen={showTransfer}
+        onClose={() => setShowTransfer(false)}
         onConfirm={handleTransfer}
         folders={folders.filter(f => f.id !== activeFolderId)}
         selectedCount={selected.size}
@@ -288,23 +309,23 @@ export default function DashboardPage() {
       {showNewFolder && (
         <div className="modal-overlay" onClick={() => { setShowNewFolder(false); setNewFolderName(''); }}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ padding: 24 }}>
-             <h3 style={{ marginBottom: 12, fontSize: 16, fontWeight: 600 }}>New Folder</h3>
-             <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>Enter a name for the new folder on Telegram:</p>
-             <input 
-               className="form-input" 
-               style={{ width: '100%', background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: 8, color: 'white', outline: 'none' }} 
-               placeholder="Folder name" 
-               value={newFolderName} 
-               onChange={e => setNewFolderName(e.target.value)} 
-               autoFocus 
-               onKeyDown={e => e.key === 'Enter' && newFolderName && (createFolder(newFolderName), setShowNewFolder(false), setNewFolderName(''))} 
-             />
-             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
-                <button className="btn btn-ghost" onClick={() => { setShowNewFolder(false); setNewFolderName(''); }}>Cancel</button>
-                <button className="btn btn-primary" disabled={!newFolderName} onClick={() => { createFolder(newFolderName); setShowNewFolder(false); setNewFolderName(''); }}>
-                  Create Folder
-                </button>
-             </div>
+            <h3 style={{ marginBottom: 12, fontSize: 16, fontWeight: 600 }}>New Folder</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>Enter a name for the new folder on Telegram:</p>
+            <input
+              className="form-input"
+              style={{ width: '100%', background: 'var(--bg-2)', border: '1px solid var(--border)', padding: '10px 14px', borderRadius: 8, color: 'white', outline: 'none' }}
+              placeholder="Folder name"
+              value={newFolderName}
+              onChange={e => setNewFolderName(e.target.value)}
+              autoFocus
+              onKeyDown={e => e.key === 'Enter' && newFolderName && (createFolder(newFolderName), setShowNewFolder(false), setNewFolderName(''))}
+            />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
+              <button className="btn btn-ghost" onClick={() => { setShowNewFolder(false); setNewFolderName(''); }}>Cancel</button>
+              <button className="btn btn-primary" disabled={!newFolderName} onClick={() => { createFolder(newFolderName); setShowNewFolder(false); setNewFolderName(''); }}>
+                Create Folder
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -42,6 +42,8 @@ function AppRoutes() {
       <Route path="/preview/:fileId" element={<PreviewPage />} />
       <Route path="/preview/:folderId/:fileId" element={<PreviewPage />} />
       <Route path="/s/:shareId" element={<PreviewPage />} />
+      <Route path="/f/:uid" element={<PreviewPage />} />
+      <Route path="/p/*" element={<PreviewPage />} />
       <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
     </Routes>
   );
