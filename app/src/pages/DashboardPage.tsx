@@ -158,25 +158,27 @@ export default function DashboardPage() {
     else setSelected(new Set(filteredFiles.map(f => f.id)));
   };
 
-  const openFile = (file: FileItem) => {
-    const activeFolder = folders.find(f => f.id === activeFolderId);
-    const token = localStorage.getItem('token') || '';
-    const ah = activeFolder?.access_hash || '';
-    
-    // Obfuscate sensitive keys for the public URL
-    const params = new URLSearchParams({
-      n: file.name,
-      s: file.size.toString(),
-      t: file.icon_type,
-      d: '1', // Direct view flag
-      // Use 'p' for payload to hide it's a token
-      p: btoa(JSON.stringify({ t: token, a: ah }))
-    });
-
-    const previewUrl = activeFolderId 
-      ? `/preview/${activeFolderId}/${file.id}?${params.toString()}` 
-      : `/preview/${file.id}?${params.toString()}`;
-    window.open(previewUrl, '_blank');
+  const openFile = async (file: FileItem) => {
+    try {
+      const activeFolder = folders.find(f => f.id === activeFolderId);
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          folderId: activeFolderId,
+          messageId: file.id,
+          accessHash: activeFolder?.access_hash || '0',
+          name: file.name,
+          size: file.size,
+          type: file.icon_type
+        })
+      });
+      if (!res.ok) throw new Error('Failed to create share link');
+      const { id } = await res.json();
+      window.open(`/s/${id}`, '_blank');
+    } catch (e: any) {
+      toast(e.message, 'error');
+    }
   };
 
   const downloadFile = (file: FileItem) => {

@@ -41,6 +41,7 @@ function AppRoutes() {
       <Route path="/settings" element={<Guard><SettingsPage /></Guard>} />
       <Route path="/preview/:fileId" element={<PreviewPage />} />
       <Route path="/preview/:folderId/:fileId" element={<PreviewPage />} />
+      <Route path="/s/:shareId" element={<PreviewPage />} />
       <Route path="*" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />} />
     </Routes>
   );
