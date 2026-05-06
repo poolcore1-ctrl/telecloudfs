@@ -31,6 +31,12 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     }), { headers: { 'Content-Type': 'application/json' } });
   }
 
+  // Handle POST /api/share
+  if (request.method === 'POST') {
+    const body = await request.json() as any;
+    const { folderId, messageId, accessHash, name, size, type } = body;
+    const id = crypto.randomUUID().split('-')[0]; // Simple short ID
+
     // Get bot tokens to assign one to the share
     const config = await env.DB.prepare('SELECT value FROM config WHERE key = "bot_tokens"').first() as any;
     const botTokens = config?.value?.split(',').map((t: string) => t.trim()).filter((t: string) => t) || [];
