@@ -131,7 +131,9 @@ class TelegramService {
 
   async getFileInfo(messageId: number, folderId: number | null) {
     if (!this.client) throw new Error('Client not connected');
-    const peer = folderId ?? 'me';
+    let peer: any = folderId ?? 'me';
+    // Force entity resolution for guest clients
+    try { await this.client.getEntity(peer); } catch (e) { console.warn('Peer resolution failed:', e); }
     const messages = await this.client.getMessages(peer, { ids: [messageId] });
     if (!messages.length || !messages[0].media) return null;
     const media = messages[0].media as any;
@@ -176,7 +178,8 @@ class TelegramService {
 
   async downloadChunk(messageId: number, folderId: number | null, start: number, end: number) {
     if (!this.client) throw new Error('Client not connected');
-    const peer = folderId ?? 'me';
+    let peer: any = folderId ?? 'me';
+    try { await this.client.getEntity(peer); } catch (e) { console.warn('Peer resolution failed:', e); }
     const messages = await this.client.getMessages(peer, { ids: [messageId] });
     if (!messages.length || !messages[0].media) throw new Error('File not found');
     const media = messages[0].media;
