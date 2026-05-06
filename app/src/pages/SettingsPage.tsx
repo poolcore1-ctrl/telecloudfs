@@ -5,6 +5,12 @@ import { telegramService } from '../services/TelegramClient';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
 
+interface Bot {
+  id: string;
+  name: string;
+  token: string;
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate();
   const { setAuthenticated } = useApp();
@@ -14,8 +20,12 @@ export default function SettingsPage() {
   const [newKeyName, setNewKeyName] = useState('');
   const [creatingKey, setCreatingKey] = useState(false);
   const [newKey, setNewKey] = useState<ApiKey | null>(null);
-  const [botTokens, setBotTokens] = useState('');
-  const [savingBot, setSavingBot] = useState(false);
+
+  const [bots, setBots] = useState<Bot[]>([]);
+  const [botsLoading, setBotsLoading] = useState(true);
+  const [newBotName, setNewBotName] = useState('');
+  const [newBotToken, setNewBotToken] = useState('');
+  const [creatingBot, setCreatingBot] = useState(false);
 
   const loadKeys = useCallback(async () => {
     setKeysLoading(true);
@@ -26,17 +36,16 @@ export default function SettingsPage() {
     finally { setKeysLoading(false); }
   }, [toast]);
 
-  const loadConfig = useCallback(async () => {
+  const loadBots = useCallback(async () => {
+    setBotsLoading(true);
     try {
-      const res = await fetch('/api/config');
-      if (res.ok) {
-        const config = await res.json();
-        setBotTokens(config.bot_tokens || '');
-      }
-    } catch { toast('Failed to load config', 'error'); }
+      const res = await fetch('/api/bots');
+      if (res.ok) setBots(await res.json());
+    } catch { toast('Failed to load bots', 'error'); }
+    finally { setBotsLoading(false); }
   }, [toast]);
 
-  useEffect(() => { loadKeys(); loadConfig(); }, [loadKeys, loadConfig]);
+  useEffect(() => { loadKeys(); loadBots(); }, [loadKeys, loadBots]);
 
   const createKey = async () => {
     if (!newKeyName.trim()) return;
@@ -61,14 +70,34 @@ export default function SettingsPage() {
     } catch (e: any) { toast(e.message, 'error'); }
   };
 
-  const saveBotTokens = async () => {
-    setSavingBot(true);
+  const createBot = async () => {
+    if (!newBotToken.trim()) return;
+    setCreatingBot(true);
     try {
-      const res = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'bot_tokens', value: botTokens }) });
-      if (!res.ok) throw new Error('Failed to save bot tokens');
-      toast('Bot tokens saved', 'success');
+      const res = await fetch('/api/bots', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ name: newBotName.trim(), token: newBotToken.trim() }) 
+      });
+      if (!res.ok) throw new Error('Failed to add bot');
+      setNewBotName(''); setNewBotToken(''); loadBots();
+      toast('Bot added successfully', 'success');
     } catch (e: any) { toast(e.message, 'error'); }
-    finally { setSavingBot(false); }
+    finally { setCreatingBot(false); }
+  };
+
+  const deleteBot = async (id: string) => {
+    if (!confirm('Delete this bot? Guest previews using this bot will stop working.')) return;
+    try {
+      const res = await fetch('/api/bots', { 
+        method: 'DELETE', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ id }) 
+      });
+      if (!res.ok) throw new Error('Failed to delete bot');
+      setBots(prev => prev.filter(b => b.id !== id));
+      toast('Bot removed', 'success');
+    } catch (e: any) { toast(e.message, 'error'); }
   };
 
   const logout = async () => {
@@ -109,23 +138,45 @@ export default function SettingsPage() {
         <div className="settings-wrap">
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-1)', marginBottom: 24 }}>Settings</h1>
 
-          {/* Bot Tokens */}
+          {/* Bot Management */}
           <div className="settings-section">
             <div className="settings-section-head">Public Access Bots</div>
             <div style={{ padding: '16px 20px' }}>
-              <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12 }}>
-                Add your Telegram Bot tokens below (comma-separated). Guests will use these bots to preview files without needing to log in. 
-                <strong> Important:</strong> Add your bots as administrators to your folders.
+              <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 16 }}>
+                Manage your Telegram bots for public file access. Bots are automatically added as administrators to new folders.
               </div>
-              <textarea 
-                placeholder="123456:ABC-DEF, 789012:GHI-JKL" 
-                value={botTokens}
-                onChange={e => setBotTokens(e.target.value)}
-                style={{ width: '100%', height: 80, fontSize: 13, padding: 12, marginBottom: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-2)', color: 'var(--text-1)' }}
-              />
-              <button className="btn btn-primary btn-sm" onClick={saveBotTokens} disabled={savingBot}>
-                {savingBot ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Save Bot Tokens'}
-              </button>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: 8, marginBottom: 20 }}>
+                <input type="text" placeholder="Bot Name (e.g. Bot 1)" value={newBotName}
+                  onChange={e => setNewBotName(e.target.value)}
+                  style={{ height: 36 }} />
+                <input type="text" placeholder="Bot Token (123456:ABC...)" value={newBotToken}
+                  onChange={e => setNewBotToken(e.target.value)}
+                  style={{ height: 36 }} />
+                <button className="btn btn-primary btn-sm" onClick={createBot} disabled={creatingBot || !newBotToken.trim()}>
+                  {creatingBot ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Add Bot'}
+                </button>
+              </div>
+
+              {botsLoading ? (
+                <div style={{ padding: 20, display: 'flex', justifyContent: 'center' }}><div className="spinner" /></div>
+              ) : bots.length === 0 ? (
+                <div style={{ padding: 12, fontSize: 13, color: 'var(--text-3)', textAlign: 'center', background: 'var(--bg-2)', borderRadius: 8 }}>
+                  No bots added yet.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {bots.map(bot => (
+                    <div key={bot.id} className="key-row" style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '10px 16px' }}>
+                      <div style={{ flex: 1 }}>
+                        <div className="key-name" style={{ fontWeight: 600 }}>{bot.name}</div>
+                        <div className="key-secret" style={{ fontSize: 11, opacity: 0.7 }}>{bot.token.substring(0, 15)}...</div>
+                      </div>
+                      <button className="btn btn-danger btn-sm" onClick={() => deleteBot(bot.id)}>Remove</button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -156,7 +207,7 @@ export default function SettingsPage() {
               <div style={{ padding: 20, display: 'flex', justifyContent: 'center' }}><div className="spinner" /></div>
             ) : keys.map(k => (
               <div key={k.id} className="key-row">
-                <div>
+                <div style={{ flex: 1 }}>
                   <div className="key-name">{k.name}</div>
                   <div className="key-secret">{k.id}</div>
                 </div>
@@ -168,7 +219,7 @@ export default function SettingsPage() {
           <div className="settings-section">
             <div className="settings-section-head">Account</div>
             <div className="settings-row">
-              <div>
+              <div style={{ flex: 1 }}>
                 <div className="settings-row-label">Log Out</div>
                 <div className="settings-row-sub">End your active session</div>
               </div>

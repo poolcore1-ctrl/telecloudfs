@@ -101,15 +101,12 @@ class TelegramService {
 
       // Automatically add bots as administrators
       try {
-        const configRes = await fetch('/api/config');
-        if (configRes.ok) {
-          const config = await configRes.json();
-          const botTokens = config.bot_tokens?.split(',').map((t: string) => t.trim()).filter((t: string) => t) || [];
+        const botsRes = await fetch('/api/bots');
+        if (botsRes.ok) {
+          const bots = await botsRes.json();
+          const botTokens = bots.map((b: any) => b.token);
           for (const token of botTokens) {
             try {
-              // We need the bot's user ID. Bots usually have IDs starting with their token prefix.
-              // But the safest way is to resolve the bot via the user's client if they've ever talked to it.
-              // Or better, use the token to get the bot's identity.
               const botId = token.split(':')[0];
               await this.client.invoke(new Api.channels.EditAdmin({
                 channel: chats[0].id,

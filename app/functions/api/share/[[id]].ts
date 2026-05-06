@@ -37,9 +37,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const { folderId, messageId, accessHash, name, size, type } = body;
     const id = crypto.randomUUID().split('-')[0]; // Simple short ID
 
-    // Get bot tokens to assign one to the share
-    const config = await env.DB.prepare('SELECT value FROM config WHERE key = "bot_tokens"').first() as any;
-    const botTokens = config?.value?.split(',').map((t: string) => t.trim()).filter((t: string) => t) || [];
+    // Get bots to assign one to the share
+    const { results: bots } = await env.DB.prepare('SELECT token FROM bots').all() as any;
+    const botTokens = bots?.map((b: any) => b.token) || [];
     // Simple rotation: pick a random bot if available
     const botToken = botTokens.length > 0 ? botTokens[Math.floor(Math.random() * botTokens.length)] : null;
 
