@@ -68,6 +68,7 @@ class TelegramService {
   }
 
   getClient() { return this.client; }
+  isConnected() { return !!this.client; }
 
   async logout() {
     if (this.client) { await this.client.invoke(new Api.auth.LogOut()); this.client = null; this.session = new StringSession(''); }

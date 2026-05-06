@@ -6,9 +6,17 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env, params } = context;
   const url = new URL(request.url);
   
-  // Handle GET /api/share/:id
+  // Handle GET /api/share/:id or /api/share/init
   const pathParts = url.pathname.split('/');
   const shareId = pathParts[pathParts.length - 1];
+
+  if (request.method === 'GET' && shareId === 'init') {
+    const vault = await env.DB.prepare('SELECT api_id, api_hash FROM vault WHERE id = 1').first() as any;
+    return new Response(JSON.stringify({
+      apiId: vault?.api_id,
+      apiHash: vault?.api_hash
+    }), { headers: { 'Content-Type': 'application/json' } });
+  }
 
   if (request.method === 'GET' && shareId && shareId !== 'share') {
     try {
