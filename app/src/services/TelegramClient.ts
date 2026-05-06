@@ -14,6 +14,12 @@ class TelegramService {
     return this.client.connected;
   }
 
+  async connectWithBot(apiId: number, apiHash: string, botToken: string) {
+    this.client = new TelegramClient(new StringSession(''), apiId, apiHash, { connectionRetries: 5 });
+    await this.client.start({ botAuthToken: botToken });
+    return this.client.connected;
+  }
+
   async saveToVault(password: string, apiId: number, apiHash: string) {
     const { encryptionKey, authKey, salt } = await SecurityService.deriveKeys(password);
     const encrypted_payload = await SecurityService.encrypt({ session_string: this.session.save() }, encryptionKey);
@@ -84,13 +90,49 @@ class TelegramService {
     if (!this.client) throw new Error('Client not connected');
     const result = await this.client.invoke(new Api.channels.CreateChannel({ title: name, about: 'TeleCloudFS Folder', megagroup: false, broadcast: true }));
     const chats = (result as any).chats;
-    if (chats?.length > 0) return { 
-      id: Number(chats[0].id), 
-      name: chats[0].title, 
-      access_hash: chats[0].accessHash?.toString() || '0',
-      file_count: 0, 
-      total_size: 0 
-    };
+    if (chats?.length > 0) {
+      const folder = { 
+        id: Number(chats[0].id), 
+        name: chats[0].title, 
+        access_hash: chats[0].accessHash?.toString() || '0',
+        file_count: 0, 
+        total_size: 0 
+      };
+
+      // Automatically add bots as administrators
+      try {
+        const configRes = await fetch('/api/config');
+        if (configRes.ok) {
+          const config = await configRes.json();
+          const botTokens = config.bot_tokens?.split(',').map((t: string) => t.trim()).filter((t: string) => t) || [];
+          for (const token of botTokens) {
+            try {
+              // We need the bot's user ID. Bots usually have IDs starting with their token prefix.
+              // But the safest way is to resolve the bot via the user's client if they've ever talked to it.
+              // Or better, use the token to get the bot's identity.
+              const botId = token.split(':')[0];
+              await this.client.invoke(new Api.channels.EditAdmin({
+                channel: chats[0].id,
+                userId: botId,
+                adminRights: new Api.ChatAdminRights({
+                  changeInfo: true,
+                  postMessages: true,
+                  editMessages: true,
+                  deleteMessages: true,
+                  inviteUsers: true,
+                  manageCall: true,
+                  other: true
+                }),
+                rank: 'TeleCloudFS Bot'
+              }));
+              console.log(`Added bot ${botId} as admin to ${folder.name}`);
+            } catch (e) { console.warn(`Failed to add bot as admin:`, e); }
+          }
+        }
+      } catch (e) { console.warn('Failed to fetch bot config for auto-admin:', e); }
+
+      return folder;
+    }
     throw new Error('Failed to create folder');
   }
 
@@ -238,8 +280,18 @@ class TelegramService {
     if (!('serviceWorker' in navigator)) return;
     navigator.serviceWorker.addEventListener('message', async (event) => {
       const port = event.ports[0];
-      const { type, folderId, messageId, start, end, accessHash } = event.data || {};
+      const { type, folderId, messageId, start, end, accessHash, botToken } = event.data || {};
       if (type === 'PING') { port?.postMessage({ ok: true }); return; }
+
+      // If a bot token is provided, ensure we are connected as a bot
+      if (botToken && (!this.client || !this.client.connected)) {
+        try {
+          const init = await fetch('/api/vault', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'load' }) });
+          const { api_id, api_hash } = await init.json() as any;
+          await this.connectWithBot(Number(api_id), api_hash, botToken);
+        } catch (e) { console.error('Auto bot connect failed:', e); }
+      }
+
       if (type === 'GET_FILE_INFO') {
         try { port?.postMessage(await this.getFileInfo(messageId, folderId, accessHash)); }
         catch (e: any) { port?.postMessage({ error: e.message }); }

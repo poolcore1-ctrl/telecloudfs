@@ -11,9 +11,10 @@ self.addEventListener('fetch', event => {
   const messageId = parseInt(m[2]);
   const fileName = decodeURIComponent(m[3]);
   const accessHash = url.searchParams.get('ah');
+  const botToken = url.searchParams.get('bt');
   const isDownload = url.searchParams.get('download') === '1';
 
-  event.respondWith(handleStream(event.request, folderId, messageId, fileName, accessHash, isDownload));
+  event.respondWith(handleStream(event.request, folderId, messageId, fileName, accessHash, botToken, isDownload));
 });
 
 async function ask(client, msg) {
@@ -25,7 +26,7 @@ async function ask(client, msg) {
   });
 }
 
-async function handleStream(req, folderId, messageId, fileName, accessHash, isDownload) {
+async function handleStream(req, folderId, messageId, fileName, accessHash, botToken, isDownload) {
   const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
   if (!allClients.length) return new Response('No window active', { status: 503 });
 
@@ -37,7 +38,7 @@ async function handleStream(req, folderId, messageId, fileName, accessHash, isDo
 
   if (!activeClient) return fetch(req);
 
-  const info = await ask(activeClient, { type: 'GET_FILE_INFO', folderId, messageId, accessHash });
+  const info = await ask(activeClient, { type: 'GET_FILE_INFO', folderId, messageId, accessHash, botToken });
   if (!info || info.error) return new Response('File info failed: ' + (info?.error || 'timeout'), { status: 404 });
 
   const { totalSize, mimeType, fileName: realName } = info;
@@ -49,7 +50,7 @@ async function handleStream(req, folderId, messageId, fileName, accessHash, isDo
     const [, s, e] = range.match(/bytes=(\d+)-(\d*)/) || [];
     const start = parseInt(s);
     const end = e ? Math.min(parseInt(e), totalSize - 1) : Math.min(start + CHUNK - 1, totalSize - 1);
-    const chunk = await ask(activeClient, { type: 'GET_CHUNK', folderId, messageId, start, end, accessHash });
+    const chunk = await ask(activeClient, { type: 'GET_CHUNK', folderId, messageId, start, end, accessHash, botToken });
     if (!chunk || chunk.error) return new Response('Chunk error', { status: 500 });
     return new Response(chunk.data, { status: 206, headers: { 
       'Content-Type': mimeType, 
@@ -66,7 +67,7 @@ async function handleStream(req, folderId, messageId, fileName, accessHash, isDo
     let off = 0;
     while (off < totalSize) {
       const end = Math.min(off + CHUNK - 1, totalSize - 1);
-      const chunk = await ask(activeClient, { type: 'GET_CHUNK', folderId, messageId, start: off, end, accessHash });
+      const chunk = await ask(activeClient, { type: 'GET_CHUNK', folderId, messageId, start: off, end, accessHash, botToken });
       if (!chunk || chunk.error) break;
       await writer.write(new Uint8Array(chunk.data));
       off = end + 1;

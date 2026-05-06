@@ -32,16 +32,19 @@ export default function PreviewPage() {
           name = data.name;
           size = data.size;
           type = data.type;
-          ah = data.accessHash;
-          // For short links, the backend gives us the session secrets if we have the share link
-          // But wait, we still need the master password to decrypt the session locally.
-          // TO MAKE IT TRULY PUBLIC: We'll use the token from localStorage if logged in,
-          // OR we'll ask the user for the password if it's a private share.
-          // BUT the user wants "WITHOUT LOGIN".
-          // So we'll update DashboardPage to save a 'Guest Token' for short links.
-          tok = localStorage.getItem('token') || ''; 
+          // For short links, prioritize Bot connection for public access
+          if (data.botToken) {
+            try {
+              await telegramService.connectWithBot(data.apiId, data.apiHash, data.botToken);
+              tok = 'BOT'; // Placeholder to indicate bot is used
+              bt = data.botToken;
+            } catch (e) { console.warn('Bot connect failed:', e); }
+          } else {
+            tok = localStorage.getItem('token') || ''; 
+          }
         }
 
+        let bt = ''; // Bot Token storage for the stream URL
         const p = searchParams.get('p');
         if (p) {
           try {
@@ -55,7 +58,7 @@ export default function PreviewPage() {
           setFileData({ id: fid, name, size: parseInt(size as any), icon_type: type });
           setKeys({ t: tok || '', a: ah || '' });
 
-          if (tok) {
+          if (tok && tok !== 'BOT') {
             try {
               const { apiId, apiHash } = await telegramService.loadFromVault(tok);
               await telegramService.connect(apiId, apiHash);
@@ -65,8 +68,9 @@ export default function PreviewPage() {
           if (searchParams.get('d') === '1' || shareId) {
             const url = telegramService.getStreamingUrl(fid, foldId, name);
             const urlObj = new URL(url, window.location.origin);
-            if (tok) urlObj.searchParams.set('t', tok);
+            if (tok && tok !== 'BOT') urlObj.searchParams.set('t', tok);
             if (ah) urlObj.searchParams.set('ah', ah);
+            if (bt) urlObj.searchParams.set('bt', bt);
             window.location.replace(urlObj.pathname + urlObj.search);
             return;
           }

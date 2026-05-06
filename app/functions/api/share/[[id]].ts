@@ -24,22 +24,23 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       name: share.name,
       size: share.size,
       type: share.type,
+      botToken: share.bot_token,
       salt: vault?.salt,
       apiId: vault?.api_id,
       apiHash: vault?.api_hash
     }), { headers: { 'Content-Type': 'application/json' } });
   }
 
-  // Handle POST /api/share
-  if (request.method === 'POST') {
-    const body = await request.json() as any;
-    const { folderId, messageId, accessHash, name, size, type } = body;
-    const id = crypto.randomUUID().split('-')[0]; // Simple short ID
+    // Get bot tokens to assign one to the share
+    const config = await env.DB.prepare('SELECT value FROM config WHERE key = "bot_tokens"').first() as any;
+    const botTokens = config?.value?.split(',').map((t: string) => t.trim()).filter((t: string) => t) || [];
+    // Simple rotation: pick a random bot if available
+    const botToken = botTokens.length > 0 ? botTokens[Math.floor(Math.random() * botTokens.length)] : null;
 
-    await env.DB.prepare('CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, folder_id INTEGER, message_id INTEGER, access_hash TEXT, name TEXT, size INTEGER, type TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)').run();
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, folder_id INTEGER, message_id INTEGER, access_hash TEXT, name TEXT, size INTEGER, type TEXT, bot_token TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)').run();
     
-    await env.DB.prepare('INSERT INTO shares (id, folder_id, message_id, access_hash, name, size, type) VALUES (?, ?, ?, ?, ?, ?, ?)')
-      .bind(id, folderId, messageId, accessHash, name, size, type).run();
+    await env.DB.prepare('INSERT INTO shares (id, folder_id, message_id, access_hash, name, size, type, bot_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(id, folderId, messageId, accessHash, name, size, type, botToken).run();
 
     return new Response(JSON.stringify({ id }), { headers: { 'Content-Type': 'application/json' } });
   }

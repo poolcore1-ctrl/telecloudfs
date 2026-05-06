@@ -14,6 +14,8 @@ export default function SettingsPage() {
   const [newKeyName, setNewKeyName] = useState('');
   const [creatingKey, setCreatingKey] = useState(false);
   const [newKey, setNewKey] = useState<ApiKey | null>(null);
+  const [botTokens, setBotTokens] = useState('');
+  const [savingBot, setSavingBot] = useState(false);
 
   const loadKeys = useCallback(async () => {
     setKeysLoading(true);
@@ -24,7 +26,17 @@ export default function SettingsPage() {
     finally { setKeysLoading(false); }
   }, [toast]);
 
-  useEffect(() => { loadKeys(); }, [loadKeys]);
+  const loadConfig = useCallback(async () => {
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) {
+        const config = await res.json();
+        setBotTokens(config.bot_tokens || '');
+      }
+    } catch { toast('Failed to load config', 'error'); }
+  }, [toast]);
+
+  useEffect(() => { loadKeys(); loadConfig(); }, [loadKeys, loadConfig]);
 
   const createKey = async () => {
     if (!newKeyName.trim()) return;
@@ -49,6 +61,16 @@ export default function SettingsPage() {
     } catch (e: any) { toast(e.message, 'error'); }
   };
 
+  const saveBotTokens = async () => {
+    setSavingBot(true);
+    try {
+      const res = await fetch('/api/config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: 'bot_tokens', value: botTokens }) });
+      if (!res.ok) throw new Error('Failed to save bot tokens');
+      toast('Bot tokens saved', 'success');
+    } catch (e: any) { toast(e.message, 'error'); }
+    finally { setSavingBot(false); }
+  };
+
   const logout = async () => {
     if (!confirm('Log out? You will need your master password to log back in.')) return;
     await telegramService.logout();
@@ -58,7 +80,6 @@ export default function SettingsPage() {
 
   return (
     <div className="app-shell">
-      {/* Minimal sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
           <div className="sidebar-logo">
@@ -88,13 +109,30 @@ export default function SettingsPage() {
         <div className="settings-wrap">
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-1)', marginBottom: 24 }}>Settings</h1>
 
+          {/* Bot Tokens */}
+          <div className="settings-section">
+            <div className="settings-section-head">Public Access Bots</div>
+            <div style={{ padding: '16px 20px' }}>
+              <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12 }}>
+                Add your Telegram Bot tokens below (comma-separated). Guests will use these bots to preview files without needing to log in. 
+                <strong> Important:</strong> Add your bots as administrators to your folders.
+              </div>
+              <textarea 
+                placeholder="123456:ABC-DEF, 789012:GHI-JKL" 
+                value={botTokens}
+                onChange={e => setBotTokens(e.target.value)}
+                style={{ width: '100%', height: 80, fontSize: 13, padding: 12, marginBottom: 12, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-2)', color: 'var(--text-1)' }}
+              />
+              <button className="btn btn-primary btn-sm" onClick={saveBotTokens} disabled={savingBot}>
+                {savingBot ? <span className="spinner" style={{ width: 14, height: 14 }} /> : 'Save Bot Tokens'}
+              </button>
+            </div>
+          </div>
+
           {/* API Keys */}
           <div className="settings-section">
             <div className="settings-section-head">API Keys</div>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12 }}>
-                API keys allow programmatic access to your files via the S3-compatible API.
-              </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input type="text" placeholder="Key name (e.g. My App)" value={newKeyName}
                   onChange={e => setNewKeyName(e.target.value)}
@@ -106,7 +144,6 @@ export default function SettingsPage() {
               </div>
               {newKey && (
                 <div style={{ marginTop: 12, background: 'var(--success-dim)', border: '1px solid rgba(92,168,122,0.25)', borderRadius: 'var(--r-sm)', padding: 12 }}>
-                  <div style={{ fontSize: 12, color: 'var(--success)', fontWeight: 600, marginBottom: 6 }}>✓ Key created — copy it now, it won't be shown again:</div>
                   <code style={{ fontSize: 12, color: 'var(--text-1)', wordBreak: 'break-all' }}>{newKey.key_secret}</code>
                   <button className="btn btn-ghost btn-sm" style={{ marginTop: 8, width: '100%' }}
                     onClick={() => { navigator.clipboard.writeText(newKey.key_secret || ''); toast('Copied!', 'success'); }}>
@@ -115,11 +152,8 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
-
             {keysLoading ? (
               <div style={{ padding: 20, display: 'flex', justifyContent: 'center' }}><div className="spinner" /></div>
-            ) : keys.length === 0 ? (
-              <div style={{ padding: '16px 20px', fontSize: 13, color: 'var(--text-3)' }}>No API keys yet.</div>
             ) : keys.map(k => (
               <div key={k.id} className="key-row">
                 <div>
@@ -131,35 +165,13 @@ export default function SettingsPage() {
             ))}
           </div>
 
-          {/* S3 API info */}
-          <div className="settings-section">
-            <div className="settings-section-head">S3-Compatible API</div>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">Endpoint</div>
-                <code style={{ fontSize: 12, color: 'var(--text-2)' }}>{window.location.origin}/api/s3</code>
-              </div>
-            </div>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">Usage</div>
-                <div className="settings-row-sub">GET /api/s3/{'{folderId}'}/{'{messageId}'}?apiKey=your-key</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Account */}
           <div className="settings-section">
             <div className="settings-section-head">Account</div>
             <div className="settings-row">
               <div>
-                <div className="settings-row-label">Session</div>
-                <div className="settings-row-sub">Encrypted and stored in Cloudflare D1</div>
+                <div className="settings-row-label">Log Out</div>
+                <div className="settings-row-sub">End your active session</div>
               </div>
-              <span className="badge badge-success">Active</span>
-            </div>
-            <div className="settings-row">
-              <div className="settings-row-label">Log Out</div>
               <button className="btn btn-danger btn-sm" onClick={logout}>Log Out</button>
             </div>
           </div>
