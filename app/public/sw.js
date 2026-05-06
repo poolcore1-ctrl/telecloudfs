@@ -11,8 +11,9 @@ self.addEventListener('fetch', event => {
   const messageId = parseInt(m[2]);
   const fileName = decodeURIComponent(m[3]);
   const accessHash = url.searchParams.get('ah');
+  const isDownload = url.searchParams.get('download') === '1';
 
-  event.respondWith(handleStream(event.request, folderId, messageId, fileName, accessHash));
+  event.respondWith(handleStream(event.request, folderId, messageId, fileName, accessHash, isDownload));
 });
 
 async function ask(client, msg) {
@@ -24,11 +25,10 @@ async function ask(client, msg) {
   });
 }
 
-async function handleStream(req, folderId, messageId, fileName, accessHash) {
+async function handleStream(req, folderId, messageId, fileName, accessHash, isDownload) {
   const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
   if (!allClients.length) return new Response('No window active', { status: 503 });
 
-  // Find a client that is actually ready (responsive)
   let activeClient = null;
   for (const client of allClients) {
     const ok = await ask(client, { type: 'PING' });
@@ -43,6 +43,7 @@ async function handleStream(req, folderId, messageId, fileName, accessHash) {
   const { totalSize, mimeType, fileName: realName } = info;
   const name = realName || fileName;
   const range = req.headers.get('range');
+  const disposition = isDownload ? 'attachment' : 'inline';
 
   if (range) {
     const [, s, e] = range.match(/bytes=(\d+)-(\d*)/) || [];
@@ -55,7 +56,7 @@ async function handleStream(req, folderId, messageId, fileName, accessHash) {
       'Content-Range': `bytes ${start}-${end}/${totalSize}`, 
       'Content-Length': String(end - start + 1), 
       'Accept-Ranges': 'bytes', 
-      'Content-Disposition': `inline; filename="${name}"` 
+      'Content-Disposition': `${disposition}; filename="${name}"` 
     } });
   }
 
@@ -77,6 +78,6 @@ async function handleStream(req, folderId, messageId, fileName, accessHash) {
     'Content-Type': mimeType, 
     'Content-Length': String(totalSize), 
     'Accept-Ranges': 'bytes', 
-    'Content-Disposition': `attachment; filename="${name}"` 
+    'Content-Disposition': `${disposition}; filename="${name}"` 
   } });
 }
