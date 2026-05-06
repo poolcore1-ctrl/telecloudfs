@@ -159,11 +159,13 @@ export default function DashboardPage() {
   };
 
   const openFile = (file: FileItem) => {
+    const activeFolder = folders.find(f => f.id === activeFolderId);
     const params = new URLSearchParams({
       n: file.name,
       s: file.size.toString(),
       t: file.icon_type,
-      tok: localStorage.getItem('token') || ''
+      tok: localStorage.getItem('token') || '',
+      ah: activeFolder?.access_hash || ''
     });
     const previewUrl = activeFolderId 
       ? `/preview/${activeFolderId}/${file.id}?${params.toString()}` 

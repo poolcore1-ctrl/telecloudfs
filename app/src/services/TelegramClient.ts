@@ -71,14 +71,26 @@ class TelegramService {
     if (!this.client) throw new Error('Client not connected');
     const dialogs = await this.client.getDialogs({ limit: 200 });
     return dialogs.filter(d => d.isChannel && d.entity && (d.entity as any).creator)
-      .map(d => ({ id: Number(d.entity?.id || 0), name: d.title || 'Unknown', file_count: 0, total_size: 0 }));
+      .map(d => ({ 
+        id: Number(d.entity?.id || 0), 
+        name: d.title || 'Unknown', 
+        access_hash: (d.entity as any).accessHash?.toString() || '0',
+        file_count: 0, 
+        total_size: 0 
+      }));
   }
 
   async createFolder(name: string) {
     if (!this.client) throw new Error('Client not connected');
     const result = await this.client.invoke(new Api.channels.CreateChannel({ title: name, about: 'TeleCloudFS Folder', megagroup: false, broadcast: true }));
     const chats = (result as any).chats;
-    if (chats?.length > 0) return { id: Number(chats[0].id), name: chats[0].title, file_count: 0, total_size: 0 };
+    if (chats?.length > 0) return { 
+      id: Number(chats[0].id), 
+      name: chats[0].title, 
+      access_hash: chats[0].accessHash?.toString() || '0',
+      file_count: 0, 
+      total_size: 0 
+    };
     throw new Error('Failed to create folder');
   }
 
@@ -129,9 +141,12 @@ class TelegramService {
     });
   }
 
-  async getFileInfo(messageId: number, folderId: number | null) {
+  async getFileInfo(messageId: number, folderId: number | null, accessHash?: string) {
     if (!this.client) throw new Error('Client not connected');
     let peer: any = folderId ?? 'me';
+    if (folderId && accessHash && accessHash !== '0') {
+      peer = new Api.InputPeerChannel({ channelId: BigInt(folderId), accessHash: BigInt(accessHash) });
+    }
     // Force entity resolution for guest clients
     try { await this.client.getEntity(peer); } catch (e) { console.warn('Peer resolution failed:', e); }
     const messages = await this.client.getMessages(peer, { ids: [messageId] });
@@ -176,9 +191,12 @@ class TelegramService {
     await this.client.forwardMessages(targetFolderId ?? 'me', { messages: messageIds, fromPeer: sourceFolderId ?? 'me' });
   }
 
-  async downloadChunk(messageId: number, folderId: number | null, start: number, end: number) {
+  async downloadChunk(messageId: number, folderId: number | null, start: number, end: number, accessHash?: string) {
     if (!this.client) throw new Error('Client not connected');
     let peer: any = folderId ?? 'me';
+    if (folderId && accessHash && accessHash !== '0') {
+      peer = new Api.InputPeerChannel({ channelId: BigInt(folderId), accessHash: BigInt(accessHash) });
+    }
     try { await this.client.getEntity(peer); } catch (e) { console.warn('Peer resolution failed:', e); }
     const messages = await this.client.getMessages(peer, { ids: [messageId] });
     if (!messages.length || !messages[0].media) throw new Error('File not found');
@@ -220,15 +238,15 @@ class TelegramService {
     if (!('serviceWorker' in navigator)) return;
     navigator.serviceWorker.addEventListener('message', async (event) => {
       const port = event.ports[0];
-      const { type, folderId, messageId, start, end } = event.data || {};
+      const { type, folderId, messageId, start, end, accessHash } = event.data || {};
       if (type === 'PING') { port?.postMessage({ ok: true }); return; }
       if (type === 'GET_FILE_INFO') {
-        try { port?.postMessage(await this.getFileInfo(messageId, folderId)); }
+        try { port?.postMessage(await this.getFileInfo(messageId, folderId, accessHash)); }
         catch (e: any) { port?.postMessage({ error: e.message }); }
       }
       if (type === 'GET_CHUNK') {
         try {
-          const result = await this.downloadChunk(messageId, folderId, start, end) as any;
+          const result = await this.downloadChunk(messageId, folderId, start, end, accessHash) as any;
           port?.postMessage(result, [result.data.buffer]);
         } catch (e: any) { port?.postMessage({ error: e.message }); }
       }

@@ -1,6 +1,7 @@
 export interface Folder {
   id: number;
   name: string;
+  access_hash: string;
   file_count: number;
   total_size: number;
 }

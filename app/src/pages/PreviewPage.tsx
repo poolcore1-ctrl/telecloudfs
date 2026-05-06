@@ -52,9 +52,11 @@ export default function PreviewPage() {
     const url = telegramService.getStreamingUrl(fileData.id, folderId ? parseInt(folderId) : null, fileData.name);
     const urlObj = new URL(url, window.location.origin);
     
-    // Ensure the token from the URL params is attached to the stream URL
+    // Ensure the token and access hash from the URL params are attached to the stream URL
     const tok = searchParams.get('tok') || searchParams.get('t');
     if (tok) urlObj.searchParams.set('t', tok);
+    const ah = searchParams.get('ah');
+    if (ah) urlObj.searchParams.set('ah', ah);
     
     return urlObj.pathname + urlObj.search;
   };

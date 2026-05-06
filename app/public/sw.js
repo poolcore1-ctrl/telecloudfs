@@ -10,20 +10,21 @@ self.addEventListener('fetch', event => {
   const folderId = m[1] === 'home' ? null : parseInt(m[1]);
   const messageId = parseInt(m[2]);
   const fileName = decodeURIComponent(m[3]);
+  const accessHash = url.searchParams.get('ah');
 
-  event.respondWith(handleStream(event.request, folderId, messageId, fileName));
+  event.respondWith(handleStream(event.request, folderId, messageId, fileName, accessHash));
 });
 
 async function ask(client, msg) {
   return new Promise(resolve => {
     const ch = new MessageChannel();
     ch.port1.onmessage = e => resolve(e.data);
-    setTimeout(() => resolve(null), 5000); // 5s timeout
+    setTimeout(() => resolve(null), 10000); // 10s timeout
     client.postMessage(msg, [ch.port2]);
   });
 }
 
-async function handleStream(req, folderId, messageId, fileName) {
+async function handleStream(req, folderId, messageId, fileName, accessHash) {
   const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
   if (!allClients.length) return new Response('No window active', { status: 503 });
 
@@ -34,13 +35,9 @@ async function handleStream(req, folderId, messageId, fileName) {
     if (ok) { activeClient = client; break; }
   }
 
-  if (!activeClient) {
-    // Fallback: If no browser client is ready, let the request go to network
-    // This allows the backend Cloudflare Worker to handle it if it has /stream
-    return fetch(req);
-  }
+  if (!activeClient) return fetch(req);
 
-  const info = await ask(activeClient, { type: 'GET_FILE_INFO', folderId, messageId });
+  const info = await ask(activeClient, { type: 'GET_FILE_INFO', folderId, messageId, accessHash });
   if (!info || info.error) return new Response('File info failed: ' + (info?.error || 'timeout'), { status: 404 });
 
   const { totalSize, mimeType, fileName: realName } = info;
@@ -51,7 +48,7 @@ async function handleStream(req, folderId, messageId, fileName) {
     const [, s, e] = range.match(/bytes=(\d+)-(\d*)/) || [];
     const start = parseInt(s);
     const end = e ? Math.min(parseInt(e), totalSize - 1) : Math.min(start + CHUNK - 1, totalSize - 1);
-    const chunk = await ask(activeClient, { type: 'GET_CHUNK', folderId, messageId, start, end });
+    const chunk = await ask(activeClient, { type: 'GET_CHUNK', folderId, messageId, start, end, accessHash });
     if (!chunk || chunk.error) return new Response('Chunk error', { status: 500 });
     return new Response(chunk.data, { status: 206, headers: { 
       'Content-Type': mimeType, 
@@ -68,7 +65,7 @@ async function handleStream(req, folderId, messageId, fileName) {
     let off = 0;
     while (off < totalSize) {
       const end = Math.min(off + CHUNK - 1, totalSize - 1);
-      const chunk = await ask(activeClient, { type: 'GET_CHUNK', folderId, messageId, start: off, end });
+      const chunk = await ask(activeClient, { type: 'GET_CHUNK', folderId, messageId, start: off, end, accessHash });
       if (!chunk || chunk.error) break;
       await writer.write(new Uint8Array(chunk.data));
       off = end + 1;
