@@ -21,15 +21,16 @@ export default function PreviewPage() {
         const size = searchParams.get('s');
         const type = searchParams.get('t');
 
+        const tok = searchParams.get('tok') || searchParams.get('t');
+        if (tok) {
+          try {
+            const { apiId, apiHash } = await telegramService.loadFromVault(tok);
+            await telegramService.connect(apiId, apiHash);
+          } catch (e) { console.warn('Guest connect failed:', e); }
+        }
+
         if (name && size && type) {
           setFileData({ id: fid, name, size: parseInt(size), icon_type: type });
-          const tok = searchParams.get('tok') || searchParams.get('t');
-          if (tok) {
-            try {
-              const { apiId, apiHash } = await telegramService.loadFromVault(tok);
-              await telegramService.connect(apiId, apiHash);
-            } catch (e) { console.warn('Guest connect failed:', e); }
-          }
           setLoading(false);
           return;
         }
