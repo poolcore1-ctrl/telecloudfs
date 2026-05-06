@@ -64,15 +64,17 @@ async function handleStream(req, folderId, messageId, fileName, accessHash, botT
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
   (async () => {
-    let off = 0;
-    while (off < totalSize) {
-      const end = Math.min(off + CHUNK - 1, totalSize - 1);
-      const chunk = await ask(activeClient, { type: 'GET_CHUNK', folderId, messageId, start: off, end, accessHash, botToken });
-      if (!chunk || chunk.error) break;
-      await writer.write(new Uint8Array(chunk.data));
-      off = end + 1;
-    }
-    writer.close();
+    try {
+      let off = 0;
+      while (off < totalSize) {
+        const end = Math.min(off + CHUNK - 1, totalSize - 1);
+        const chunk = await ask(activeClient, { type: 'GET_CHUNK', folderId, messageId, start: off, end, accessHash, botToken });
+        if (!chunk || chunk.error) break;
+        await writer.write(new Uint8Array(chunk.data));
+        off = end + 1;
+      }
+    } catch (e) { console.warn('Stream interrupted:', e); }
+    finally { try { writer.close(); } catch (e) {} }
   })();
 
   return new Response(readable, { status: 200, headers: { 

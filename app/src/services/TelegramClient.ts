@@ -6,16 +6,16 @@ class TelegramService {
   private client: TelegramClient | null = null;
   private session: StringSession = new StringSession('');
 
-  async connect(apiId: number, apiHash: string, force = false) {
+  async connect(apiId: any, apiHash: string, force = false) {
     if (!this.client || force) {
-      this.client = new TelegramClient(this.session, apiId, apiHash, { connectionRetries: 5 });
+      this.client = new TelegramClient(this.session, Number(apiId), apiHash, { connectionRetries: 5 });
     }
     await this.client.connect();
     return this.client.connected;
   }
 
-  async connectWithBot(apiId: number, apiHash: string, botToken: string) {
-    this.client = new TelegramClient(new StringSession(''), apiId, apiHash, { connectionRetries: 5 });
+  async connectWithBot(apiId: any, apiHash: string, botToken: string) {
+    this.client = new TelegramClient(new StringSession(''), Number(apiId), apiHash, { connectionRetries: 5 });
     await this.client.start({ botAuthToken: botToken });
     return this.client.connected;
   }
