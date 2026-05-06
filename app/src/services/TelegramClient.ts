@@ -177,6 +177,27 @@ class TelegramService {
     }
   }
 
+  async revokeBotFromFolders(botToken: string) {
+    if (!this.client) throw new Error('Client not connected');
+    const folders = await this.scanFolders();
+    const botId = botToken.split(':')[0];
+
+    for (const folder of folders) {
+      try {
+        await this.client.invoke(new Api.channels.EditAdmin({
+          channel: folder.id,
+          userId: botId,
+          adminRights: new Api.ChatAdminRights({
+            changeInfo: false, postMessages: false, editMessages: false, deleteMessages: false,
+            inviteUsers: false, manageCall: false, other: false
+          }),
+          rank: ''
+        }));
+        console.log(`Revoked bot ${botId} from folder ${folder.name}`);
+      } catch (e) { console.warn(`Failed to revoke bot from ${folder.name}:`, e); }
+    }
+  }
+
   async getFiles(folderId: number | null) {
     if (!this.client) throw new Error('Client not connected');
     const peer = folderId ?? 'me';

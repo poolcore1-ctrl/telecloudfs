@@ -101,16 +101,25 @@ export default function SettingsPage() {
   };
 
   const deleteBot = async (id: string) => {
-    if (!confirm('Delete this bot? Guest previews using this bot will stop working.')) return;
+    const bot = bots.find(b => b.id === id);
+    if (!bot) return;
+    if (!confirm(`Remove "${bot.name}"? It will also be removed as an administrator from all folders.`)) return;
+    
     try {
+      toast(`Revoking bot "${bot.name}"...`, 'info');
+      // First revoke from Telegram
+      await telegramService.revokeBotFromFolders(bot.token);
+      
+      // Then delete from database
       const res = await fetch('/api/bots', { 
         method: 'DELETE', 
         headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({ id }) 
       });
-      if (!res.ok) throw new Error('Failed to delete bot');
+      if (!res.ok) throw new Error('Failed to delete bot from database');
+      
       setBots(prev => prev.filter(b => b.id !== id));
-      toast('Bot removed', 'success');
+      toast('Bot removed and revoked successfully', 'success');
     } catch (e: any) { toast(e.message, 'error'); }
   };
 

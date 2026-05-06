@@ -11,8 +11,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const shareId = pathParts[pathParts.length - 1];
 
   if (request.method === 'GET' && shareId && shareId !== 'share') {
-    const share = await env.DB.prepare('SELECT * FROM shares WHERE id = ?').bind(shareId).first() as any;
-    if (!share) return new Response(JSON.stringify({ error: 'Share not found' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
+    const share = await env.DB.prepare('SELECT * FROM shares WHERE id = ? AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)').bind(shareId).first() as any;
+    if (!share) return new Response(JSON.stringify({ error: 'Share not found or expired' }), { status: 404, headers: { 'Content-Type': 'application/json' } });
     
     // Get vault salt and api keys for the guest client to initialize
     const vault = await env.DB.prepare('SELECT salt, api_id, api_hash FROM vault WHERE id = 1').first() as any;
@@ -37,16 +37,25 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     const { folderId, messageId, accessHash, name, size, type } = body;
     const id = crypto.randomUUID().split('-')[0]; // Simple short ID
 
+    // Ensure bots table exists before querying
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS bots (id TEXT PRIMARY KEY, name TEXT, token TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)').run();
+
     // Get bots to assign one to the share
-    const { results: bots } = await env.DB.prepare('SELECT token FROM bots').all() as any;
-    const botTokens = bots?.map((b: any) => b.token) || [];
+    const botsRes = await env.DB.prepare('SELECT token FROM bots').all() as any;
+    const bots = botsRes?.results || [];
+    const botTokens = bots.map((b: any) => b.token) || [];
+    
     // Simple rotation: pick a random bot if available
     const botToken = botTokens.length > 0 ? botTokens[Math.floor(Math.random() * botTokens.length)] : null;
 
-    await env.DB.prepare('CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, folder_id INTEGER, message_id INTEGER, access_hash TEXT, name TEXT, size INTEGER, type TEXT, bot_token TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)').run();
+    // Create shares table with expires_at (defaults to 24h later)
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS shares (id TEXT PRIMARY KEY, folder_id INTEGER, message_id INTEGER, access_hash TEXT, name TEXT, size INTEGER, type TEXT, bot_token TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, expires_at DATETIME)').run();
     
-    await env.DB.prepare('INSERT INTO shares (id, folder_id, message_id, access_hash, name, size, type, bot_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(id, folderId, messageId, accessHash, name, size, type, botToken).run();
+    // Set expiration to 24 hours from now
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().replace('T', ' ').split('.')[0];
+
+    await env.DB.prepare('INSERT INTO shares (id, folder_id, message_id, access_hash, name, size, type, bot_token, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(id, folderId, messageId, accessHash, name, size, type, botToken, expiresAt).run();
 
     return new Response(JSON.stringify({ id }), { headers: { 'Content-Type': 'application/json' } });
   }
