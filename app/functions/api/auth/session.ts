@@ -19,8 +19,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     'Access-Control-Allow-Origin': '*',
   };
 
-  // For this implementation, we use a simple 'session' cookie or header
-  const sessionId = request.headers.get('x-session-id') || 'default_user'; // In prod, use a real random UUID in a cookie
+  // Use a secure cookie to identify the session
+  const cookieHeader = request.headers.get('Cookie') || '';
+  const sessionId = cookieHeader.match(/session_token=([^;]+)/)?.[1];
 
   // Ensure table exists
   await env.DB.prepare(`
@@ -34,6 +35,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   `).run();
 
   if (request.method === 'GET') {
+    if (!sessionId) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: corsHeaders });
     const session = await env.DB.prepare('SELECT * FROM web_sessions WHERE id = ?').bind(sessionId).first() as any;
     if (!session) return new Response(JSON.stringify({ error: 'No session' }), { status: 404, headers: corsHeaders });
     return new Response(JSON.stringify({
@@ -45,6 +47,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
   if (request.method === 'POST') {
     const { apiId, apiHash, sessionString } = await request.json() as any;
+    const newSessionId = sessionId || crypto.randomUUID();
+    
     await env.DB.prepare(`
       INSERT INTO web_sessions (id, api_id, api_hash, session_string)
       VALUES (?, ?, ?, ?)
@@ -52,13 +56,24 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         api_id = excluded.api_id,
         api_hash = excluded.api_hash,
         session_string = excluded.session_string
-    `).bind(sessionId, apiId, apiHash, sessionString).run();
-    return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+    `).bind(newSessionId, apiId, apiHash, sessionString).run();
+
+    return new Response(JSON.stringify({ ok: true, sessionId: newSessionId }), { 
+      headers: { 
+        ...corsHeaders,
+        'Set-Cookie': `session_token=${newSessionId}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000` // 30 days
+      } 
+    });
   }
 
   if (request.method === 'DELETE') {
-    await env.DB.prepare('DELETE FROM web_sessions WHERE id = ?').bind(sessionId).run();
-    return new Response(JSON.stringify({ ok: true }), { headers: corsHeaders });
+    if (sessionId) await env.DB.prepare('DELETE FROM web_sessions WHERE id = ?').bind(sessionId).run();
+    return new Response(JSON.stringify({ ok: true }), { 
+      headers: { 
+        ...corsHeaders,
+        'Set-Cookie': 'session_token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0'
+      } 
+    });
   }
 
   return new Response('Method not allowed', { status: 405 });
