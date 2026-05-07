@@ -18,23 +18,27 @@ class TelegramService {
     return this.accessHashCache.get(`${folderId || 0}_${messageId}`);
   }
 
-  /** Save session to sessionStorage so new tabs can restore without re-login */
-  private saveSession(apiId: number, apiHash: string) {
+  /** Save session to D1 so new tabs can restore without re-login */
+  private async saveSession(apiId: number, apiHash: string) {
     try {
-      sessionStorage.setItem(TelegramService.SESSION_KEY, JSON.stringify({
-        session: this.session.save(), apiId, apiHash
-      }));
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiId, apiHash, sessionString: this.session.save()
+        })
+      });
     } catch (e) { /* ignore */ }
   }
 
-  /** Restore session from sessionStorage — used by new tabs (e.g. preview tabs) */
+  /** Restore session from D1 — used by new tabs (e.g. preview tabs) */
   async restoreSession(): Promise<boolean> {
     if (this.client) return true; // already connected
     try {
-      const raw = sessionStorage.getItem(TelegramService.SESSION_KEY);
-      if (!raw) return false;
-      const { session, apiId, apiHash } = JSON.parse(raw);
-      this.session = new StringSession(session);
+      const res = await fetch('/api/auth/session');
+      if (!res.ok) return false;
+      const { sessionString, apiId, apiHash } = await res.json() as any;
+      this.session = new StringSession(sessionString);
       this.client = new TelegramClient(this.session, Number(apiId), apiHash, { connectionRetries: 3 });
       await this.client.connect();
       return !!this.client.connected;
@@ -100,6 +104,10 @@ class TelegramService {
   }
 
   async checkAuthorization(): Promise<boolean> {
+    if (!this.client) {
+      const restored = await this.restoreSession();
+      if (restored) return true;
+    }
     if (!this.client) return false;
     try { return await this.client.checkAuthorization(); } catch { return false; }
   }
@@ -112,7 +120,7 @@ class TelegramService {
       await this.client.invoke(new Api.auth.LogOut());
       this.client = null;
       this.session = new StringSession('');
-      try { sessionStorage.removeItem(TelegramService.SESSION_KEY); } catch (e) {}
+      try { await fetch('/api/auth/session', { method: 'DELETE' }); } catch (e) {}
     }
   }
 
@@ -380,10 +388,7 @@ class TelegramService {
 
   getStreamingUrl(messageId: number, folderId: number | null, fileName: string) {
     const fp = folderId === null ? 'home' : String(folderId);
-    let url = `/stream/${fp}/${messageId}/${encodeURIComponent(fileName)}`;
-    const token = localStorage.getItem('token');
-    if (token) url += `?t=${token}`;
-    return url;
+    return `/stream/${fp}/${messageId}/${encodeURIComponent(fileName)}`;
   }
 
   setupServiceWorkerHandler() {

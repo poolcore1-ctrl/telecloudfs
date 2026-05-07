@@ -52,12 +52,30 @@ export default function PreviewPage() {
         // ── 1. Resolve /api/file/:folderId/:fileId (Primary Clean Path) ──
         if (fid && foldId !== null) {
           const res = await fetch(`/api/file/${foldId}/${fid}`);
-          if (!res.ok) throw new Error('File not found or not indexed');
-          const data = await res.json();
-          name = data.name;
-          size = String(data.size);
-          ah = data.access_hash;
-          mimeType = data.mime_type || mimeType;
+          if (res.ok) {
+            const data = await res.json();
+            name = data.name;
+            size = String(data.size);
+            ah = data.access_hash;
+            mimeType = data.mime_type || mimeType;
+          }
+
+          // If we are logged in but don't have the hash yet, try to resolve it directly
+          if (!ah && telegramService.isConnected()) {
+             try {
+               const info = await telegramService.getFileInfo(fid, foldId);
+               if (info) {
+                 name = info.fileName;
+                 size = String(info.totalSize);
+                 mimeType = info.mimeType;
+                 // We need the hash to stream — get it from the internal peer resolution
+                 const peer = await telegramService.getClient()?.getEntity(foldId);
+                 if (peer && (peer as any).accessHash) {
+                    ah = (peer as any).accessHash.toString();
+                 }
+               }
+             } catch (e) { console.warn('Direct resolve failed:', e); }
+          }
         }
         // ── 2. Resolve /p/ virtual path ──
         else if (location.pathname.startsWith('/p/')) {
