@@ -77,9 +77,6 @@ export const onRequest: PagesFunction<Env> = async (context) => {
     // ── Step 2: Get active admin session for public streaming ──
     const sessionRes = await env.DB.prepare('SELECT * FROM web_sessions LIMIT 1').first() as any;
     
-    let name = 'file';
-    let size = 0;
-    let mimeType = 'application/octet-stream';
 
     // Return the folder's access_hash and the admin session for fast public streaming
     return new Response(JSON.stringify({
