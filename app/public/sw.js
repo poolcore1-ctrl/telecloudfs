@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-const CHUNK = 1024 * 1024; // 1MB chunks
+const CHUNK = 2 * 1024 * 1024; // 2MB chunks for better throughput
 
 self.addEventListener('install', event => {
   self.skipWaiting();
@@ -89,7 +89,14 @@ async function handleStream(request, folderId, messageId, fileName, accessHash, 
         off = end + 1;
       }
     } catch (e) { console.warn('Stream interrupted:', e); }
-    finally { try { writer.close(); } catch (e) {} }
+    finally { 
+      try { 
+        if (writer) {
+          await writer.ready;
+          await writer.close(); 
+        }
+      } catch (e) {} 
+    }
   })();
 
   return new Response(readable, { 
@@ -109,6 +116,6 @@ function ask(client, msg) {
     const channel = new MessageChannel();
     channel.port1.onmessage = e => resolve(e.data);
     client.postMessage(msg, [channel.port2]);
-    setTimeout(() => resolve(null), 10000); // 10s timeout
+    setTimeout(() => resolve(null), 60000); // 60s timeout for large MTProto chunks
   });
 }

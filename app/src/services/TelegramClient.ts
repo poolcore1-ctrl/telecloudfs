@@ -7,6 +7,7 @@ class TelegramService {
   private session: StringSession = new StringSession('');
   private static SESSION_KEY = 'tg_session_cache';
   private accessHashCache: Map<string, string> = new Map();
+  private mediaCache: Map<string, any> = new Map();
 
   /** Temporary cache for access hashes to keep them out of URLs */
   registerAccessHash(folderId: number | string | null, messageId: number, accessHash: string) {
@@ -353,25 +354,30 @@ class TelegramService {
 
   async downloadChunk(messageId: number, folderId: number | null, start: number, end: number, accessHash?: string) {
     if (!this.client) throw new Error('Client not connected');
-    let peer: any = folderId ?? 'me';
-    if (folderId && accessHash && accessHash !== '0') {
-      try {
-        peer = await this.client.getEntity(folderId);
-      } catch (e) {
-        peer = new Api.InputPeerChannel({ channelId: BigInt(folderId), accessHash: BigInt(accessHash) });
-      }
-    }
+    const cacheKey = `${folderId || 0}_${messageId}`;
+    let media = this.mediaCache.get(cacheKey);
 
-    // Refresh media reference for EVERY chunk to be safe
-    const messages = await this.client.getMessages(peer, { ids: [messageId] });
-    if (!messages || !messages.length || !messages[0].media) throw new Error('File not found');
+    if (!media) {
+      let peer: any = folderId ?? 'me';
+      if (folderId && accessHash && accessHash !== '0') {
+        try {
+          peer = await this.client.getEntity(folderId);
+        } catch (e) {
+          peer = new Api.InputPeerChannel({ channelId: BigInt(folderId), accessHash: BigInt(accessHash) });
+        }
+      }
+
+      const messages = await this.client.getMessages(peer, { ids: [messageId] });
+      if (!messages || !messages.length || !messages[0].media) throw new Error('File not found');
+      media = messages[0].media;
+      this.mediaCache.set(cacheKey, media);
+    }
     
-    const media = messages[0].media;
     const totalSize = Number((media as any).document?.size || (media as any).photo?.sizes.slice(-1)[0]?.size || 0);
     const mimeType = (media as any).document?.mimeType || 'image/jpeg';
     
     // @ts-ignore
-    const buffer = await this.client.downloadFile(media, { start, end, workers: 4 });
+    const buffer = await this.client.downloadFile(media, { start, end, workers: 16 });
     return { data: buffer, totalSize, mimeType };
   }
 
