@@ -182,25 +182,31 @@ export default function DashboardPage() {
   const openFile = async (file: FileItem) => {
     try {
       const activeFolder = folders.find(f => f.id === activeFolderId);
-      const res = await fetch('/api/share', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          folderId: activeFolderId,
-          messageId: file.id,
-          accessHash: activeFolder?.access_hash || '0',
-          name: file.name,
-          size: file.size,
-          type: file.icon_type
-        })
+      const ah = activeFolder?.access_hash || '0';
+
+      // For logged-in users, build the stream URL directly and open the preview page
+      const streamUrl = telegramService.getStreamingUrl(file.id, activeFolderId, file.name);
+      const urlObj = new URL(streamUrl, window.location.origin);
+      if (ah) urlObj.searchParams.set('ah', ah);
+
+      // Navigate to preview page — it will render image/video/audio/pdf inline
+      const previewPath = activeFolderId
+        ? `/preview/${activeFolderId}/${file.id}`
+        : `/preview/${file.id}`;
+      const previewParams = new URLSearchParams({
+        n: file.name,
+        s: String(file.size),
+        t: file.icon_type,
+        mt: file.mime_type,
+        ah: ah,
+        d: '1'
       });
-      if (!res.ok) throw new Error('Failed to create share link');
-      const { id } = await res.json();
-      window.open(`/s/${id}`, '_blank');
+      window.open(`${previewPath}?${previewParams.toString()}`, '_blank');
     } catch (e: any) {
       toast(e.message, 'error');
     }
   };
+
 
   const downloadFile = (file: FileItem) => {
     const url = telegramService.getStreamingUrl(file.id, activeFolderId, file.name);
