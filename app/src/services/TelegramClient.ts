@@ -55,6 +55,13 @@ class TelegramService {
     return this.client.connected;
   }
 
+  async connectWithSession(apiId: any, apiHash: string, sessionString: string) {
+    this.session = new StringSession(sessionString);
+    this.client = new TelegramClient(this.session, Number(apiId), apiHash, { connectionRetries: 3 });
+    await this.client.connect();
+    return this.client.connected;
+  }
+
   async connectWithBot(apiId: any, apiHash: string, botToken: string) {
     this.client = new TelegramClient(new StringSession(''), Number(apiId), apiHash, { connectionRetries: 5 });
     await this.client.start({ botAuthToken: botToken });

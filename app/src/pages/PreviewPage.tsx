@@ -59,13 +59,12 @@ export default function PreviewPage() {
             ah = data.access_hash;
             mimeType = data.mime_type || mimeType;
 
-            // ── Auto-connect bot for guests ──
-            if (!telegramService.isConnected() && data.botToken) {
+            // ── Auto-connect using shared admin session for guests ──
+            if (!telegramService.isConnected() && data.sessionString) {
               try {
-                const cfg = await (await fetch('/api/share/init')).json();
-                await telegramService.connectWithBot(cfg.apiId, cfg.apiHash, data.botToken);
-                botToken = data.botToken;
-              } catch (e) { console.warn('Guest bot connect failed:', e); }
+                // Initialize the client with the shared session string
+                await telegramService.connectWithSession(data.apiId, data.apiHash, data.sessionString);
+              } catch (e) { console.warn('Guest MTProto connect failed:', e); }
             }
           }
 

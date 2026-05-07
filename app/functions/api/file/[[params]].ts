@@ -74,15 +74,25 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       } catch (e) {}
     }
 
-    // Return the folder's access_hash and a bot token for guests
+    // ── Step 2: Get active admin session for public streaming ──
+    const sessionRes = await env.DB.prepare('SELECT * FROM web_sessions LIMIT 1').first() as any;
+    
+    let name = 'file';
+    let size = 0;
+    let mimeType = 'application/octet-stream';
+
+    // Return the folder's access_hash and the admin session for fast public streaming
     return new Response(JSON.stringify({
       folder_id: parseInt(folderId),
       message_id: messageId,
       access_hash: accessHash,
-      name: name, // Fallback, client will refine
+      name: name,
       size: size,
       mime_type: mimeType,
-      botToken: botToken, // Provide bot token so guests can preview
+      // Provide admin session to guest for high-speed MTProto streaming
+      apiId: sessionRes?.api_id,
+      apiHash: sessionRes?.api_hash,
+      sessionString: sessionRes?.session_string,
       source: accessHash ? 'registry' : 'fallback'
     }), { headers: corsHeaders });
 
