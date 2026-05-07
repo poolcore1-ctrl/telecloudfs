@@ -74,7 +74,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       } catch (e) {}
     }
 
-    // Return the folder's access_hash so the client can resolve the rest
+    // Return the folder's access_hash and a bot token for guests
     return new Response(JSON.stringify({
       folder_id: parseInt(folderId),
       message_id: messageId,
@@ -82,6 +82,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       name: name, // Fallback, client will refine
       size: size,
       mime_type: mimeType,
+      botToken: botToken, // Provide bot token so guests can preview
       source: accessHash ? 'registry' : 'fallback'
     }), { headers: corsHeaders });
 

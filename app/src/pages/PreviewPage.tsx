@@ -58,6 +58,15 @@ export default function PreviewPage() {
             size = String(data.size);
             ah = data.access_hash;
             mimeType = data.mime_type || mimeType;
+
+            // ── Auto-connect bot for guests ──
+            if (!telegramService.isConnected() && data.botToken) {
+              try {
+                const cfg = await (await fetch('/api/share/init')).json();
+                await telegramService.connectWithBot(cfg.apiId, cfg.apiHash, data.botToken);
+                botToken = data.botToken;
+              } catch (e) { console.warn('Guest bot connect failed:', e); }
+            }
           }
 
           // If we have the folder's access hash (from registry) but incomplete metadata, resolve it now

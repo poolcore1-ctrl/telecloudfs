@@ -36,7 +36,7 @@ class TelegramService {
     if (this.client) return true; // already connected
     try {
       const res = await fetch('/api/auth/session');
-      if (!res.ok) return false;
+      if (res.status === 401 || !res.ok) return false;
       const { sessionString, apiId, apiHash } = await res.json() as any;
       this.session = new StringSession(sessionString);
       this.client = new TelegramClient(this.session, Number(apiId), apiHash, { connectionRetries: 3 });
