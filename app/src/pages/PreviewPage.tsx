@@ -43,15 +43,24 @@ export default function PreviewPage() {
       try {
         let fid = fileId ? parseInt(fileId) : null;
         let foldId = folderId ? parseInt(folderId) : null;
-        let name = searchParams.get('n');
-        let size = searchParams.get('s');
-        let type = searchParams.get('t');    // icon_type, e.g. "video"
-        let ah = searchParams.get('ah');
-        let mimeType = searchParams.get('mt') || 'application/octet-stream';
+        let name = '';
+        let size = '0';
+        let ah = '';
+        let mimeType = 'application/octet-stream';
         let botToken = '';
 
-        // ── 1. Resolve /p/ virtual path ──
-        if (location.pathname.startsWith('/p/')) {
+        // ── 1. Resolve /api/file/:folderId/:fileId (Primary Clean Path) ──
+        if (fid && foldId !== null) {
+          const res = await fetch(`/api/file/${foldId}/${fid}`);
+          if (!res.ok) throw new Error('File not found or not indexed');
+          const data = await res.json();
+          name = data.name;
+          size = String(data.size);
+          ah = data.access_hash;
+          mimeType = data.mime_type || mimeType;
+        }
+        // ── 2. Resolve /p/ virtual path ──
+        else if (location.pathname.startsWith('/p/')) {
           const path = decodeURIComponent(location.pathname.replace('/p', ''));
           const res = await fetch(`/api/p${path}`);
           if (!res.ok) throw new Error('File not found at this path');
@@ -59,18 +68,16 @@ export default function PreviewPage() {
           fid = data.message_id; foldId = data.folder_id; name = data.name;
           size = String(data.size); ah = data.access_hash; mimeType = data.mime_type || mimeType;
         }
-
-        // ── 2. Resolve /f/:uid permanent ID ──
-        if (uid) {
+        // ── 3. Resolve /f/:uid permanent ID ──
+        else if (uid) {
           const res = await fetch(`/api/f/${uid}`);
           if (!res.ok) throw new Error('Permanent file ID not found');
           const data = await res.json();
           fid = data.message_id; foldId = data.folder_id; name = data.name;
           size = String(data.size); ah = data.access_hash; mimeType = data.mime_type || mimeType;
         }
-
-        // ── 3. Resolve /s/:shareId short link ──
-        if (shareId) {
+        // ── 4. Resolve /s/:shareId short link ──
+        else if (shareId) {
           const res = await fetch(`/api/share/${shareId}`);
           if (!res.ok) throw new Error('Share link expired or invalid');
           const data = await res.json();
@@ -102,10 +109,14 @@ export default function PreviewPage() {
 
         if (!fid || !name) throw new Error('Incomplete file information');
 
-        // ── Build streaming URL ──
+        // ── Register access hash in memory cache so SW can find it without it being in the URL ──
+        if (ah && ah !== '0') {
+          telegramService.registerAccessHash(foldId, fid, ah);
+        }
+
+        // ── Build streaming URL (Clean — no secrets in query params) ──
         const rawUrl = telegramService.getStreamingUrl(fid, foldId, name);
         const urlObj = new URL(rawUrl, window.location.origin);
-        if (ah) urlObj.searchParams.set('ah', ah);
         if (botToken) urlObj.searchParams.set('bt', botToken);
         const finalStreamUrl = urlObj.pathname + urlObj.search;
 

@@ -6,6 +6,17 @@ class TelegramService {
   private client: TelegramClient | null = null;
   private session: StringSession = new StringSession('');
   private static SESSION_KEY = 'tg_session_cache';
+  private accessHashCache: Map<string, string> = new Map();
+
+  /** Temporary cache for access hashes to keep them out of URLs */
+  registerAccessHash(folderId: number | string | null, messageId: number, accessHash: string) {
+    const key = `${folderId || 0}_${messageId}`;
+    this.accessHashCache.set(key, accessHash);
+  }
+
+  private getCachedAccessHash(folderId: number | string | null, messageId: number) {
+    return this.accessHashCache.get(`${folderId || 0}_${messageId}`);
+  }
 
   /** Save session to sessionStorage so new tabs can restore without re-login */
   private saveSession(apiId: number, apiHash: string) {
@@ -396,13 +407,16 @@ class TelegramService {
         }
       }
 
+      // If accessHash is missing, try to find it in our local memory cache
+      const effectiveAccessHash = accessHash || (folderId !== undefined && messageId !== undefined ? this.getCachedAccessHash(folderId, messageId) : undefined);
+
       if (type === 'GET_FILE_INFO') {
-        try { port?.postMessage(await this.getFileInfo(messageId, folderId, accessHash)); }
+        try { port?.postMessage(await this.getFileInfo(messageId, folderId, effectiveAccessHash)); }
         catch (e: any) { port?.postMessage({ error: e.message }); }
       }
       if (type === 'GET_CHUNK') {
         try {
-          const result = await this.downloadChunk(messageId, folderId, start, end, accessHash) as any;
+          const result = await this.downloadChunk(messageId, folderId, start, end, effectiveAccessHash) as any;
           port?.postMessage(result, [result.data.buffer]);
         } catch (e: any) { port?.postMessage({ error: e.message }); }
       }
