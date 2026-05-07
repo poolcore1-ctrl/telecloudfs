@@ -5,12 +5,38 @@ import { SecurityService } from './Security';
 class TelegramService {
   private client: TelegramClient | null = null;
   private session: StringSession = new StringSession('');
+  private static SESSION_KEY = 'tg_session_cache';
+
+  /** Save session to sessionStorage so new tabs can restore without re-login */
+  private saveSession(apiId: number, apiHash: string) {
+    try {
+      sessionStorage.setItem(TelegramService.SESSION_KEY, JSON.stringify({
+        session: this.session.save(), apiId, apiHash
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
+  /** Restore session from sessionStorage — used by new tabs (e.g. preview tabs) */
+  async restoreSession(): Promise<boolean> {
+    if (this.client) return true; // already connected
+    try {
+      const raw = sessionStorage.getItem(TelegramService.SESSION_KEY);
+      if (!raw) return false;
+      const { session, apiId, apiHash } = JSON.parse(raw);
+      this.session = new StringSession(session);
+      this.client = new TelegramClient(this.session, Number(apiId), apiHash, { connectionRetries: 3 });
+      await this.client.connect();
+      return !!this.client.connected;
+    } catch (e) { return false; }
+  }
 
   async connect(apiId: any, apiHash: string, force = false) {
     if (!this.client || force) {
       this.client = new TelegramClient(this.session, Number(apiId), apiHash, { connectionRetries: 5 });
     }
     await this.client.connect();
+    // Cache session so preview tabs can restore without password
+    if (this.client.connected) this.saveSession(Number(apiId), apiHash);
     return this.client.connected;
   }
 
@@ -71,7 +97,12 @@ class TelegramService {
   isConnected() { return !!this.client; }
 
   async logout() {
-    if (this.client) { await this.client.invoke(new Api.auth.LogOut()); this.client = null; this.session = new StringSession(''); }
+    if (this.client) {
+      await this.client.invoke(new Api.auth.LogOut());
+      this.client = null;
+      this.session = new StringSession('');
+      try { sessionStorage.removeItem(TelegramService.SESSION_KEY); } catch (e) {}
+    }
   }
 
   async scanFolders() {
@@ -351,13 +382,18 @@ class TelegramService {
       const { type, folderId, messageId, start, end, accessHash, botToken } = event.data || {};
       if (type === 'PING') { port?.postMessage({ ok: true }); return; }
 
-      // If a bot token is provided, ensure we are connected as a bot
-      if (botToken && (!this.client || !this.client.connected)) {
-        try {
-          const init = await fetch('/api/vault', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'load' }) });
-          const { api_id, api_hash } = await init.json() as any;
-          await this.connectWithBot(Number(api_id), api_hash, botToken);
-        } catch (e) { console.error('Auto bot connect failed:', e); }
+      // Auto-restore session for new tabs (e.g. preview tabs opened from dashboard)
+      if (!this.client) {
+        if (botToken) {
+          try {
+            const init = await fetch('/api/vault', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'load' }) });
+            const { api_id, api_hash } = await init.json() as any;
+            await this.connectWithBot(Number(api_id), api_hash, botToken);
+          } catch (e) { console.error('Auto bot connect failed:', e); }
+        } else {
+          // Try to restore user session from sessionStorage
+          await this.restoreSession();
+        }
       }
 
       if (type === 'GET_FILE_INFO') {
