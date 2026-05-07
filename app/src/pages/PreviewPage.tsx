@@ -60,15 +60,25 @@ export default function PreviewPage() {
             mimeType = data.mime_type || mimeType;
           }
 
-          // If we are logged in but don't have the hash yet, try to resolve it directly
-          if (!ah && telegramService.isConnected()) {
+          // If we have the folder's access hash (from registry) but incomplete metadata, resolve it now
+          if (ah && name === 'file' && telegramService.isConnected()) {
+             try {
+               const info = await telegramService.getFileInfo(fid, foldId, ah);
+               if (info) {
+                 name = info.fileName;
+                 size = String(info.totalSize);
+                 mimeType = info.mimeType;
+               }
+             } catch (e) { console.warn('Registry-based resolve failed:', e); }
+          }
+          // Fallback: If we are logged in but don't even have the hash, try to resolve it entirely
+          else if (!ah && telegramService.isConnected()) {
              try {
                const info = await telegramService.getFileInfo(fid, foldId);
                if (info) {
                  name = info.fileName;
                  size = String(info.totalSize);
                  mimeType = info.mimeType;
-                 // We need the hash to stream — get it from the internal peer resolution
                  const peer = await telegramService.getClient()?.getEntity(foldId);
                  if (peer && (peer as any).accessHash) {
                     ah = (peer as any).accessHash.toString();

@@ -36,12 +36,20 @@ export default function DashboardPage() {
   // Modal state for deletions
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; fileIds: number[] }>({ isOpen: false, fileIds: [] });
 
-  // Load folders
+  // Load folders and sync to registry
   useEffect(() => {
     (async () => {
       try {
         const list = await telegramService.scanFolders();
         setFolders(list);
+
+        // Sync folders to registry in background
+        Promise.all(list.map(f => fetch('/api/registry/channel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: f.id, name: f.name, accessHash: f.access_hash })
+        }))).catch(e => console.warn('Folder sync failed:', e));
+
       } catch (e: any) { toast(e.message, 'error'); }
       finally { setFoldersLoading(false); }
     })();
@@ -50,7 +58,7 @@ export default function DashboardPage() {
   const [page, setPage] = useState(1);
   const pageSize = 60;
 
-  // Load files and sync with registry
+  // Load files
   useEffect(() => {
     (async () => {
       setFilesLoading(true);
@@ -59,32 +67,10 @@ export default function DashboardPage() {
       try {
         const list = await telegramService.getFiles(activeFolderId);
         setFiles(list);
-
-        // Background indexing for permanent links
-        const activeFolder = folders.find(f => f.id === activeFolderId);
-        const folderPath = activeFolder ? `/${activeFolder.name}` : '/home';
-        
-        // Sync files in background
-        Promise.all(list.slice(0, 100).map(file => fetch('/api/file/sync', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: `${activeFolderId || 0}_${file.id}`,
-            path: `${folderPath}/${file.name}`,
-            folderId: activeFolderId || 0,
-            messageId: file.id,
-            accessHash: activeFolder?.access_hash || '0',
-            name: file.name,
-            size: file.size,
-            type: file.icon_type,
-            mimeType: file.mime_type
-          })
-        }))).catch(err => console.warn('Registry sync failed:', err));
-
       } catch (e: any) { toast(e.message, 'error'); }
       finally { setFilesLoading(false); }
     })();
-  }, [activeFolderId, folders, toast]);
+  }, [activeFolderId, toast]);
 
   // Derived stats
   const stats = useMemo(() => {
@@ -151,12 +137,21 @@ export default function DashboardPage() {
 
   const createFolder = useCallback(async (name: string) => {
     try {
-      const folder = await telegramService.createFolder(name);
-      setFolders(prev => [...prev, folder]);
-      toast(`Folder "${name}" created`, 'success');
-      navigate(`/dashboard/folder/${folder.id}`);
+      const newFolder = await telegramService.createFolder(newFolderName);
+      setFolders(prev => [...prev, newFolder]);
+      setShowNewFolder(false);
+      setNewFolderName('');
+      toast('Folder created', 'success');
+
+      // Sync new folder to registry
+      fetch('/api/registry/channel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: newFolder.id, name: newFolder.name, accessHash: newFolder.access_hash })
+      }).catch(e => console.warn('New folder sync failed:', e));
+      navigate(`/dashboard/folder/${newFolder.id}`);
     } catch (e: any) { toast(e.message, 'error'); }
-  }, [navigate, toast]);
+  }, [navigate, toast, newFolderName]);
 
   const renameFolder = useCallback(async (id: number, name: string) => {
     try {
