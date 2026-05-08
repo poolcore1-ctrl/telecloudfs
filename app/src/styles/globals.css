@@ -1281,35 +1281,66 @@ margin-top: 24px;
 
 .mobile-only { display: none !important; }
 
+/* ── Sidebar Mini Behavior ── */
+:root { --sidebar-w: 80px; }
+
+.sidebar {
+  width: var(--sidebar-w) !important;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-brand span, 
+.sidebar-section-label, 
+.sidebar-item span, 
+.sidebar-btn span { 
+  display: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.sidebar:hover { 
+  width: 260px !important; 
+  box-shadow: 10px 0 40px rgba(0,0,0,0.6); 
+}
+
+.sidebar:hover .sidebar-brand span, 
+.sidebar:hover .sidebar-section-label, 
+.sidebar:hover .sidebar-item span, 
+.sidebar:hover .sidebar-btn span { 
+  display: block;
+  opacity: 1;
+}
+
+.sidebar-header { justify-content: center; transition: all 0.3s; }
+.sidebar:hover .sidebar-header { justify-content: flex-start; padding-left: 20px; }
+
+.sidebar-btn { justify-content: center; }
+.sidebar:hover .sidebar-btn { justify-content: flex-start; }
+
+.sidebar-item { justify-content: center; }
+.sidebar:hover .sidebar-item { justify-content: flex-start; }
+
+/* ── Centered TopBar ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.topbar-title-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 1 auto;
+}
+
+.topbar-search {
+  margin: 0; /* Remove margin since we use gap in topbar */
+}
 @media (max-width: 1024px) {
   :root { --sidebar-w: 80px; }
-  
-  .sidebar-brand span, 
-  .sidebar-section-label, 
-  .sidebar-item span, 
-  .sidebar-btn span { 
-    display: none;
-  }
-  
-  .sidebar:hover { 
-    width: 260px !important; 
-    box-shadow: 10px 0 40px rgba(0,0,0,0.6); 
-  }
-  
-  .sidebar:hover .sidebar-brand span, 
-  .sidebar:hover .sidebar-section-label, 
-  .sidebar:hover .sidebar-item span, 
-  .sidebar:hover .sidebar-btn span { 
-    display: block;
-  }
-  
-  .sidebar-header { padding: 20px; justify-content: center; }
-  .sidebar:hover .sidebar-header { justify-content: flex-start; }
-  
-  .sidebar-btn { justify-content: center; padding: 12px; }
-  .sidebar-btn svg { margin: 0; }
-  .sidebar:hover .sidebar-btn { justify-content: flex-start; padding: 12px 16px; }
-  .sidebar:hover .sidebar-btn svg { margin-right: 0; }
+  .sidebar-header { padding: 20px; }
 }
 
 @media (max-width: 768px) {
@@ -1344,20 +1375,24 @@ margin-top: 24px;
   }
   .sidebar-overlay.active { display: block; }
 
-  .topbar { padding: 0 12px; height: 64px; gap: 8px; justify-content: space-between; }
-  .topbar-title-area { flex: 1; min-width: 0; }
-  .topbar-title { font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+  .topbar { 
+    padding: 0 16px; 
+    height: auto; 
+    min-height: 64px; 
+    gap: 12px;
+    justify-content: space-between; /* Mobile stays spaced out */
+  }
+  
   .topbar-stats { display: none !important; }
   .topbar-search { display: none; }
-  
-  .topbar-actions { gap: 6px; }
+  .topbar-actions { margin-left: auto; }
+  .topbar-title { font-size: 18px; }
   
   .mobile-only { display: flex !important; }
-  .btn-menu-mobile { display: flex !important; color: var(--text-2); background: none; border: none; cursor: pointer; padding: 8px; margin-right: 4px; }
+  .btn-menu-mobile { display: flex !important; color: var(--text-2); background: none; border: none; cursor: pointer; padding: 8px; margin-right: 8px; }
   
   .btn-text { display: none; }
-  .btn-select-all, .btn-upload { padding: 8px; width: 36px; height: 36px; justify-content: center; }
-  .btn-icon-sm { padding: 6px; }
+  .btn-select-all, .btn-upload { padding: 10px; width: 40px; height: 40px; justify-content: center; }
 
   .upload-manager {
     left: 12px;
@@ -1368,12 +1403,9 @@ margin-top: 24px;
   }
   
   .file-area { padding: 16px; }
-
-  .view-toggle button { padding: 8px; }
-  .view-toggle button svg { width: 18px; height: 18px; }
 }
 
-/* ── Sidebar Branding ── */
+/* ── Branding & Search Logic ── */
 .sidebar-header {
   padding: 32px 24px;
   border-bottom: 1px solid var(--border);
@@ -1402,9 +1434,7 @@ margin-top: 24px;
   transition: color 0.2s;
 }
 
-.search-close-mobile:hover {
-  color: var(--text-1);
-}
+.search-close-mobile:hover { color: var(--text-1); }
 
 @media (max-width: 768px) {
   .search-close-mobile { display: flex; }
