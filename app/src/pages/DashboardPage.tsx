@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { telegramService } from '../services/TelegramClient';
 import { FileItem, Folder } from '../types';
 import { useToast } from '../context/ToastContext';
+import { useUpload } from '../context/UploadContext';
 import Sidebar from '../components/Sidebar';
 import TopBar from '../components/TopBar';
 import FileCard from '../components/FileCard';
@@ -15,6 +16,7 @@ export default function DashboardPage() {
   const { folderId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { uploadFiles } = useUpload();
   const activeFolderId = folderId ? parseInt(folderId) : null;
 
   const [folders, setFolders] = useState<Folder[]>([]);
@@ -96,17 +98,19 @@ export default function DashboardPage() {
   }, [activeFolderId, folders]);
 
   // Handlers
-  const handleUpload = async (fileList: File[]) => {
-    for (const file of fileList) {
-      toast(`Uploading ${file.name}...`, 'info');
-      try {
-        await telegramService.uploadFile(file, activeFolderId);
-        const updated = await telegramService.getFiles(activeFolderId);
-        setFiles(updated);
-        toast(`Uploaded ${file.name}`, 'success');
-      } catch (e: any) { toast(`Failed to upload ${file.name}: ${e.message}`, 'error'); }
+  const handleUpload = useCallback((fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    uploadFiles(fileList, activeFolderId);
+  }, [activeFolderId, uploadFiles]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    dragCount.current = 0;
+    if (e.dataTransfer.files) {
+      uploadFiles(e.dataTransfer.files, activeFolderId);
     }
-  };
+  }, [activeFolderId, uploadFiles]);
 
   const deleteFiles = async (ids: number[]) => {
     toast(`Deleting ${ids.length} file(s)...`, 'info');

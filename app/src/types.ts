@@ -14,7 +14,6 @@ export interface FileItem {
   date: number;
   icon_type: 'file' | 'image' | 'video' | 'audio';
   duration?: number;
-  raw?: any;
 }
 
 export interface UploadItem {

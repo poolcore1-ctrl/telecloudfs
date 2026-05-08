@@ -288,7 +288,7 @@ class TelegramService {
         const sz = photo.sizes[photo.sizes.length - 1];
         size = sz.size || 0;
       }
-      return { id: m.id, name, size, mime_type, date: m.date, icon_type, duration, raw: m };
+      return { id: m.id, name, size, mime_type, date: m.date, icon_type, duration };
     });
   }
 
