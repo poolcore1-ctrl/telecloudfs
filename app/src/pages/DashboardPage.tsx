@@ -61,19 +61,20 @@ export default function DashboardPage() {
   const [page, setPage] = useState(1);
   const pageSize = 60;
 
-  // Load files
-  useEffect(() => {
-    (async () => {
-      setFilesLoading(true);
-      setSelected(new Set());
-      setPage(1);
-      try {
-        const list = await telegramService.getFiles(activeFolderId);
-        setFiles(list);
-      } catch (e: any) { toast(e.message, 'error'); }
-      finally { setFilesLoading(false); }
-    })();
+  const fetchFiles = useCallback(async () => {
+    setFilesLoading(true);
+    setSelected(new Set());
+    setPage(1);
+    try {
+      const list = await telegramService.getFiles(activeFolderId);
+      setFiles(list);
+    } catch (e: any) { toast(e.message, 'error'); }
+    finally { setFilesLoading(false); }
   }, [activeFolderId, toast]);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
 
   // Derived stats
   const stats = useMemo(() => {
@@ -101,17 +102,17 @@ export default function DashboardPage() {
   // Handlers
   const handleUpload = useCallback((fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
-    uploadFiles(fileList, activeFolderId);
-  }, [activeFolderId, uploadFiles]);
+    uploadFiles(fileList, activeFolderId, fetchFiles);
+  }, [activeFolderId, uploadFiles, fetchFiles]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     dragCount.current = 0;
     if (e.dataTransfer.files) {
-      uploadFiles(e.dataTransfer.files, activeFolderId);
+      uploadFiles(e.dataTransfer.files, activeFolderId, fetchFiles);
     }
-  }, [activeFolderId, uploadFiles]);
+  }, [activeFolderId, uploadFiles, fetchFiles]);
 
   const deleteFiles = async (ids: number[]) => {
     toast(`Deleting ${ids.length} file(s)...`, 'info');

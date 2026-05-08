@@ -13,7 +13,7 @@ export interface UploadTask {
 
 interface UploadContextType {
   uploads: UploadTask[];
-  uploadFiles: (files: FileList | File[], folderId: number | null) => void;
+  uploadFiles: (files: FileList | File[], folderId: number | null, onComplete?: () => void) => void;
   cancelUpload: (id: string) => void;
   clearFinished: () => void;
   cancelAll: () => void;
@@ -24,7 +24,7 @@ const UploadContext = createContext<UploadContextType | undefined>(undefined);
 export function UploadProvider({ children }: { children: React.ReactNode }) {
   const [uploads, setUploads] = useState<UploadTask[]>([]);
 
-  const uploadFiles = useCallback(async (files: FileList | File[], folderId: number | null) => {
+  const uploadFiles = useCallback(async (files: FileList | File[], folderId: number | null, onComplete?: () => void) => {
     const newTasks: UploadTask[] = Array.from(files).map(file => ({
       id: Math.random().toString(36).substr(2, 9),
       fileName: file.name,
@@ -46,8 +46,6 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
         await telegramService.uploadFile(file, folderId, (p) => {
           setUploads(prev => prev.map(t => {
              if (t.id === task.id) {
-               // If it was cancelled while uploading, we should stop (but GramJS doesn't have easy cancel)
-               // So we just check status here
                if (t.status === 'cancelled') return t;
                return { ...t, progress: p * 100 };
              }
@@ -61,6 +59,10 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
           }
           return t;
         }));
+
+        // Notify that a file has been successfully uploaded
+        if (onComplete) onComplete();
+
       } catch (e: any) {
         setUploads(prev => prev.map(t => t.id === task.id ? { ...t, status: 'error', error: e.message } : t));
       }
