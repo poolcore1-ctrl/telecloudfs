@@ -97,9 +97,11 @@ export default function TopBar({
       <div className={`topbar-search ${showSearchMobile ? 'mobile-visible' : ''}`}>
         <Search className="search-icon" size={16} />
         <input type="text" placeholder="Search files..." value={searchQuery} onChange={e => onSearch(e.target.value)} />
-        <button className="search-close-mobile" onClick={() => setShowSearchMobile(false)}>
-          <X size={16} />
-        </button>
+        {showSearchMobile && (
+          <button className="search-close-mobile mobile-only" onClick={() => setShowSearchMobile(false)}>
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       <div className="topbar-actions">

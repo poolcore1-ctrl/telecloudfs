@@ -110,14 +110,14 @@ export default function LoginPage() {
   return (
     <div className="login-shell">
       <motion.div className="login-card" initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-        <div className="login-logo-container" style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+        <div className="login-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '28px' }}>
           <Logo size={24} />
+          <h1 className="login-title" style={{ margin: 0 }}>TeleCloudFS</h1>
         </div>
 
         <AnimatePresence mode="wait">
           {step === 'welcome' && (
             <motion.div key="welcome" {...slide}>
-              <div className="login-title">TeleCloudFS</div>
               <div className="login-sub">Secure cloud storage powered by your Telegram account.</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <button className="btn btn-primary btn-full" onClick={() => setStep('creds')}>
