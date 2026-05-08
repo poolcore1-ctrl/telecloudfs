@@ -1,70 +1,87 @@
 # TeleCloudFS 2.0 🚀
 
-**TeleCloudFS** is a powerful, secure, and high-performance serverless file system built on top of Telegram's MTProto API and Cloudflare Workers. It transforms your Telegram account into a personal, unlimited cloud storage drive with a professional, Google Drive-inspired dashboard.
+**TeleCloudFS** is a high-performance, secure, and professional cloud storage solution built on top of Telegram's MTProto API and Cloudflare's serverless infrastructure. It transforms your Telegram account into an unlimited, organized cloud drive with a modern, Google Drive-inspired interface.
 
-![Dashboard Preview](https://via.placeholder.com/1200x600/0a0a0a/ffffff?text=TeleCloudFS+2.0+Dashboard)
+---
 
-## ✨ Features
+## 📸 Overview
 
-- **Unlimited Storage**: Leverages Telegram's free storage for files up to 2GB each.
-- **High-Speed MTProto Streaming**: Direct peer-to-peer streaming using 16 parallel workers for buffer-free media playback.
-- **Secure by Design**: 
-  - Sensitive session strings stored in Cloudflare D1.
-  - Zero reliance on browser `localStorage` for credentials.
-  - Secure, HTTP-only session cookies.
-- **Modern Dashboard**: 
-  - Fully responsive design (Desktop, Tablet, Mobile).
-  - Drag-and-drop file uploads.
-  - Multi-file operations (Move, Copy, Delete).
-  - Powerful search with extension and exact-match filters.
-- **Advanced Upload Manager**: 
-  - Real-time progress tracking.
-  - Support for multiple concurrent uploads.
-  - Individual and global cancel controls.
-- **Serverless Infrastructure**: Hosted entirely on Cloudflare Pages and D1 for maximum availability and zero maintenance.
+### 🖥️ Modern Dashboard
+![Main Dashboard](screenshots/dashboard.png)
+*A sleek, high-performance dashboard for managing all your Telegram-hosted files.*
+
+### 📄 Professional Document Preview
+![PDF Preview](screenshots/pdf_preview.png)
+*Built-in high-fidelity preview for PDFs and documents.*
+
+### 🖼️ High-Speed Media Streaming
+![Image Preview](screenshots/image_preview.png)
+*Instant, buffer-free image and video streaming directly from Telegram.*
+
+### 🛠️ Powerful File Operations
+![File Operations](screenshots/selection.png)
+*Advanced multi-select actions for moving, copying, and deleting files with ease.*
+
+---
+
+## ✨ Key Features
+
+- **🛡️ Secure by Design**: End-to-end session encryption using master passwords stored in a secure Cloudflare D1 vault. Zero reliance on browser storage for sensitive data.
+- **⚡ High-Performance Streaming**: Leverages 16 parallel workers for the fastest possible MTProto streaming, ensuring instant playback of high-resolution media.
+- **📁 Advanced Organization**: Create virtual folders, move/copy files between channels, and search with powerful filters.
+- **🔄 Live Upload Sync**: Real-time upload manager with per-file progress tracking and automatic list refreshing.
+- **📱 Fully Responsive**: Optimized for Desktop, Tablet, and Mobile devices with a native-app feel.
+- **🌐 Serverless Architecture**: Powered by Cloudflare Pages and D1 for maximum uptime and zero maintenance overhead.
+
+---
 
 ## 🛠 Tech Stack
 
-- **Frontend**: React (Vite), TypeScript, Tailwind-inspired Vanilla CSS.
-- **Backend**: Cloudflare Pages Functions (Workers), D1 Database.
-- **Telegram API**: GramJS (MTProto).
-- **Security**: SubtleCrypto for vault encryption.
+- **Frontend**: React 18, TypeScript, Vite.
+- **Styling**: Premium Vanilla CSS (Mobile-First, Glassmorphism).
+- **Backend**: Cloudflare Pages Functions (Edge Runtime).
+- **Database**: Cloudflare D1 (Serverless SQL).
+- **Protocol**: MTProto (via GramJS) with custom streaming optimizations.
+
+---
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### 📋 Prerequisites
 
-- A Telegram account.
-- `API_ID` and `API_HASH` from [my.telegram.org](https://my.telegram.org).
-- A Cloudflare account with Pages and D1 enabled.
+1.  A **Telegram Account**.
+2.  `API_ID` and `API_HASH` from [my.telegram.org](https://my.telegram.org).
+3.  A **Cloudflare Account** with Pages and D1 enabled.
 
-### Deployment
+### 📦 Installation & Deployment
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/poolcore1-ctrl/telecloudfs.git
-   cd telecloudfs
-   ```
+1.  **Clone the Repo**:
+    ```bash
+    git clone https://github.com/poolcore1-ctrl/telecloudfs.git
+    cd telecloudfs
+    ```
 
-2. **Setup D1 Database**:
-   Create a D1 database in your Cloudflare dashboard and run the initial migrations if necessary (the app handles table creation automatically on first run).
+2.  **Install Dependencies**:
+    ```bash
+    cd app && npm install
+    ```
 
-3. **Deploy to Cloudflare Pages**:
-   - Connect your GitHub repository to Cloudflare Pages.
-   - Set the build command to `npm run build` and the output directory to `dist`.
-   - Bind your D1 database to the `DB` variable in the Pages settings.
+3.  **Deploy to Cloudflare**:
+    - Connect your fork to **Cloudflare Pages**.
+    - Set the build command to `npm run build` and output to `dist`.
+    - Create a **D1 Database** named `DB` and bind it to your Pages project.
 
-4. **Login**:
-   Visit your deployed URL and log in using your Telegram credentials. The app will securely initialize your vault and session in D1.
+4.  **Launch**:
+    - Open your deployed URL and follow the setup wizard to securely link your Telegram account.
 
-## 📱 Mobile Support
-
-TeleCloudFS is fully responsive. The interface adapts to mobile devices, providing a native-app-like experience for browsing and streaming your files on the go.
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions! Whether it's fixing bugs, adding features, or improving documentation, feel free to open a Pull Request.
+
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

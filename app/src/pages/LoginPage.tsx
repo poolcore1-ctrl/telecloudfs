@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { telegramService } from '../services/TelegramClient';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../context/ToastContext';
+import Logo from '../components/Logo';
 
 type Step = 'welcome' | 'creds' | 'phone' | 'code' | 'twofa' | 'master' | 'restore';
 
@@ -109,10 +110,8 @@ export default function LoginPage() {
   return (
     <div className="login-shell">
       <motion.div className="login-card" initial={{ opacity: 0, y: 32 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-        <div className="login-logo">
-          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
-            <path d="M6 22L12 10l4 8 3-4 7 8H6z" fill="white" fillOpacity=".9"/>
-          </svg>
+        <div className="login-logo-container" style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+          <Logo size={24} />
         </div>
 
         <AnimatePresence mode="wait">

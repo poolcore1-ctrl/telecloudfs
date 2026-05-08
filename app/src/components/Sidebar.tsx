@@ -1,9 +1,10 @@
 import { Folder } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { Folder as FolderIcon, Plus, Settings, Home, LayoutGrid } from 'lucide-react';
+import { Folder as FolderIcon, Plus, Settings, Home } from 'lucide-react';
+import Logo from './Logo';
 
-interface Props {
-  folders: Folder[];
+interface SidebarProps {
+  folders: any[];
   activeFolderId: number | null;
   loading: boolean;
   onNewFolder: () => void;
@@ -11,16 +12,16 @@ interface Props {
   className?: string;
 }
 
-export default function Sidebar({ folders, activeFolderId, loading, onNewFolder, onDeleteFolder, className = '' }: Props) {
+export default function Sidebar({ folders, activeFolderId, loading, onNewFolder, onDeleteFolder, className = '' }: SidebarProps) {
   const navigate = useNavigate();
 
   return (
     <div className={`sidebar ${className}`}>
       <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <LayoutGrid size={18} color="white" />
+        <div className="sidebar-brand">
+          <Logo size={18} />
+          <span>TeleCloudFS</span>
         </div>
-        <span className="sidebar-brand">TeleCloudFS</span>
       </div>
 
       <div className="sidebar-items">
