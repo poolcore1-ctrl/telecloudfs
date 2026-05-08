@@ -1403,6 +1403,16 @@ margin-top: 24px;
   }
   
   .file-area { padding: 16px; }
+
+  /* Ensure text is visible in mobile drawer */
+  .sidebar-brand span, 
+  .sidebar-section-label, 
+  .sidebar-item span, 
+  .sidebar-btn span { 
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
 }
 
 /* ── Branding & Search Logic ── */
