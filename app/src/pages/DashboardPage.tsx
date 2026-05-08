@@ -199,9 +199,14 @@ export default function DashboardPage() {
     <div className="app-shell" onDragEnter={() => setIsDragging(true)} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); setIsDragging(false); handleUpload(Array.from(e.dataTransfer.files)); }}>
       <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)} />
       
-      <div className={`sidebar ${isSidebarOpen ? 'active' : ''}`}>
-        <Sidebar folders={folders} activeFolderId={activeFolderId} loading={foldersLoading} onNewFolder={() => setShowNewFolder(true)} onDeleteFolder={deleteFolder} />
-      </div>
+      <Sidebar 
+        folders={folders} 
+        activeFolderId={activeFolderId} 
+        loading={foldersLoading} 
+        onNewFolder={() => setShowNewFolder(true)} 
+        onDeleteFolder={deleteFolder} 
+        className={isSidebarOpen ? 'active' : ''}
+      />
 
       <div className="main-panel">
         <TopBar

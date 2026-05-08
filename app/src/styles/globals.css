@@ -960,6 +960,8 @@ input::placeholder { color: var(--text-3); }
 
 /* ── Mobile Responsiveness & Media Queries ── */
 
+.mobile-only { display: none !important; }
+
 @media (max-width: 1024px) {
   :root { --sidebar-w: 72px; }
   
@@ -997,7 +999,7 @@ input::placeholder { color: var(--text-3); }
 @media (max-width: 768px) {
   :root { 
     --sidebar-w: 0px; 
-    --topbar-h: 60px; 
+    --topbar-h: 64px; 
   }
   
   .sidebar { 
@@ -1035,12 +1037,17 @@ input::placeholder { color: var(--text-3); }
   }
   .sidebar-overlay.active { display: block; }
 
-  .topbar { padding: 0 16px; }
-  .topbar-stats, .view-toggle, .btn-text, .selected-count-label { display: none !important; }
+  .topbar { padding: 0 12px; height: auto; min-height: 64px; flex-wrap: wrap; gap: 8px; padding-bottom: 12px; }
+  .topbar-stats { display: none !important; }
   .topbar-search { display: none; }
-  .topbar-actions { gap: 8px; }
+  .topbar-actions { margin-left: 0; width: 100%; justify-content: space-between; order: 3; padding-top: 8px; border-top: 1px solid var(--border); }
+  .topbar-title-area { order: 1; flex: 1; }
+  .topbar-title { font-size: 16px; }
+  
   .mobile-only { display: flex !important; }
   .btn-menu-mobile { display: flex !important; color: var(--text-2); background: none; border: none; cursor: pointer; padding: 8px; margin-right: 8px; }
+  .btn-select-all .btn-text, .btn-upload .btn-text { display: none; }
+  .btn-select-all, .btn-upload { padding: 10px; }
 
   .upload-manager {
     left: 12px;
@@ -1049,6 +1056,8 @@ input::placeholder { color: var(--text-3); }
     bottom: 12px;
     max-height: 400px;
   }
+  
+  .file-area { padding: 12px; }
 }
 
 /* ── Sidebar Footer Buttons ── */
@@ -1077,3 +1086,8 @@ input::placeholder { color: var(--text-3); }
   .sidebar:not(:hover) .sidebar-btn { justify-content: center; padding: 12px; }
   .sidebar:not(:hover) .sidebar-btn span { display: none; }
 }
+
+.view-toggle { display: flex; gap: 4px; background: var(--bg-2); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
+.view-toggle .btn-icon { padding: 6px; border-radius: 6px; }
+.topbar-actions { display: flex; align-items: center; gap: 12px; }
+

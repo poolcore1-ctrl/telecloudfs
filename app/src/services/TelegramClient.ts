@@ -327,7 +327,14 @@ class TelegramService {
 
   async uploadFile(file: File, folderId: number | null, onProgress?: (p: number) => void) {
     if (!this.client) throw new Error('Client not connected');
-    const uploaded = await this.client.uploadFile({ file, workers: 1, onProgress: p => onProgress?.(p) });
+    // GramJS uploadFile onProgress receives a float 0.0 to 1.0
+    const uploaded = await this.client.uploadFile({ 
+      file, 
+      workers: 4, // Increase workers for faster upload
+      onProgress: (p) => {
+        if (onProgress) onProgress(p);
+      }
+    });
     await this.client.sendFile(folderId ?? 'me', { file: uploaded, caption: file.name, forceDocument: true });
   }
 

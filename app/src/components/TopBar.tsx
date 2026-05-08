@@ -64,7 +64,7 @@ export default function TopBar({
     <div className={`topbar ${showSearchMobile ? 'search-active' : ''}`}>
       <div className="topbar-title-area">
         {!showSearchMobile && (
-          <button className="btn-menu-mobile" onClick={onToggleSidebar}>
+          <button className="btn-menu-mobile mobile-only" onClick={onToggleSidebar}>
             <Menu size={20} />
           </button>
         )}

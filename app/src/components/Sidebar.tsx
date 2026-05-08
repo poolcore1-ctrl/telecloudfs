@@ -8,13 +8,14 @@ interface Props {
   loading: boolean;
   onNewFolder: () => void;
   onDeleteFolder: (id: number) => void;
+  className?: string;
 }
 
-export default function Sidebar({ folders, activeFolderId, loading, onNewFolder, onDeleteFolder }: Props) {
+export default function Sidebar({ folders, activeFolderId, loading, onNewFolder, onDeleteFolder, className = '' }: Props) {
   const navigate = useNavigate();
 
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${className}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <LayoutGrid size={18} color="white" />
