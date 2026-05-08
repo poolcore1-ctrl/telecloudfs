@@ -47,13 +47,12 @@ export default function Sidebar({ folders, activeFolderId, loading, onNewFolder,
       </div>
 
       <div className="sidebar-footer">
-        <button className="btn btn-ghost btn-full btn-sm" onClick={onNewFolder}>
-          <Plus size={16} />
+        <button className="sidebar-btn primary" onClick={onNewFolder}>
+          <Plus size={20} />
           <span>New Folder</span>
         </button>
-        <div style={{ height: 6 }} />
-        <button className="btn btn-ghost btn-full btn-sm" onClick={() => navigate('/settings')}>
-          <Settings size={16} />
+        <button className="sidebar-btn" onClick={() => navigate('/settings')}>
+          <Settings size={20} />
           <span>Settings</span>
         </button>
       </div>

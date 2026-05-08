@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { Search, Upload, Grid, List, CheckSquare, Trash2, Edit2, Copy, Move, X, MoreVertical } from 'lucide-react';
+import { Search, Upload, Grid, List, CheckSquare, Trash2, Edit2, Copy, Move, X, Menu } from 'lucide-react';
 
 interface Props {
   folderName: string;
@@ -19,12 +19,13 @@ interface Props {
   onRenameFolder: (id: number, newName: string) => void;
   onDeleteFolder: (id: number) => void;
   stats: { totalSize: number; fileCount: number };
+  onToggleSidebar?: () => void;
 }
 
 export default function TopBar({ 
   folderName, activeFolderId, viewMode, onViewChange, onSearch, searchQuery, 
   onUpload, selectedCount, totalCount, onMoveSelected, onCopySelected, onDeleteSelected, onClearSelection,
-  onSelectAll, onRenameFolder, onDeleteFolder, stats
+  onSelectAll, onRenameFolder, onDeleteFolder, stats, onToggleSidebar
 }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -62,6 +63,12 @@ export default function TopBar({
   return (
     <div className={`topbar ${showSearchMobile ? 'search-active' : ''}`}>
       <div className="topbar-title-area">
+        {!showSearchMobile && (
+          <button className="btn-menu-mobile" onClick={onToggleSidebar}>
+            <Menu size={20} />
+          </button>
+        )}
+        
         {isEditing ? (
           <input className="topbar-edit-input" value={newName} onChange={e => setNewName(e.target.value)} 
             onKeyDown={e => e.key === 'Enter' && handleRename()} onBlur={handleRename} autoFocus />

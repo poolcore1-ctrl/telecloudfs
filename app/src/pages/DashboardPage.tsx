@@ -196,7 +196,11 @@ export default function DashboardPage() {
 
   return (
     <div className="app-shell" onDragEnter={() => setIsDragging(true)} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); setIsDragging(false); handleUpload(Array.from(e.dataTransfer.files)); }}>
-      <Sidebar folders={folders} activeFolderId={activeFolderId} loading={foldersLoading} onNewFolder={() => setShowNewFolder(true)} onDeleteFolder={deleteFolder} />
+      <div className={`sidebar-overlay ${isSidebarOpen ? 'active' : ''}`} onClick={() => setIsSidebarOpen(false)} />
+      
+      <div className={`sidebar ${isSidebarOpen ? 'active' : ''}`}>
+        <Sidebar folders={folders} activeFolderId={activeFolderId} loading={foldersLoading} onNewFolder={() => setShowNewFolder(true)} onDeleteFolder={deleteFolder} />
+      </div>
 
       <div className="main-panel">
         <TopBar
@@ -217,6 +221,7 @@ export default function DashboardPage() {
           onRenameFolder={renameFolder}
           onDeleteFolder={deleteFolder}
           stats={stats}
+          onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
         <div className="file-area" onClick={() => { setCtx(null); setSelected(new Set()); }}>
