@@ -37,6 +37,7 @@ export default function DashboardPage() {
 
   // Modal state for deletions
   const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; fileIds: number[] }>({ isOpen: false, fileIds: [] });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Load folders and sync to registry
   useEffect(() => {
